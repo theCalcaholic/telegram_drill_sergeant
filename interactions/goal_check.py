@@ -9,8 +9,11 @@ from typing import List, Union, Iterable
 
 def check_goals(context: CallbackContext):
     user_id = int(context.job.context['user_id'])
-    goals: List[Goal] = context.job.context['goals']
+    goals: List[Goal] = list(context.job.context['goals'])
     user: User = context.bot_data['users'][user_id]
+    if len(goals) == 0:
+        print(f"No goals found for job {context.job.name}")
+        return
     context.bot.send_message(user.chat_id,
                              'Please select whether or not you have met your goals during the last period:')
     for goal in goals:
@@ -61,7 +64,7 @@ def schedule_goal_check(context: Union[CallbackContext, Dispatcher], user: User,
         'day_of_week': cron_match.group('dow')
     }
     job = context.job_queue.run_custom(check_goals, job_kwargs,
-                                       context={'user_id': user.id, 'goals': goals},
+                                       context={'user_id': user.id, 'goals': list(goals)},
                                        name=job_name)
     user.jobs.append(job)
     print(f"Scheduled job {job.name}")
@@ -74,10 +77,13 @@ def handle_goal_check_response(update: Update, context: CallbackContext):
     if int(uid) not in context.bot_data['users'] \
             or goal_title not in (g.title for g in context.bot_data['users'][int(uid)].goals):
         print(f"ERROR: Could not find goal for goal check response '{update.message}'!")
-        update.message.reply_text('Sorry, something went wrong. Please contact the bot developer')
+        context.bot.send_message(update.effective_chat.id,
+                                 'Sorry, something went wrong. Please contact the bot developer')
         return
 
     goal = next(goal for goal in context.bot_data['users'][int(uid)].goals if goal.title == goal_title)
-    goal.data.append(True if choice == 'true' else False)
+    print(choice)
+    goal.data.append(1 if choice == 'true' else 0)
+    print(goal.data)
     query.answer()
     query.edit_message_text(query.message.text + (u' \u2705' if goal.data[-1] else u' \u274c'))

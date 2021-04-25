@@ -30,3 +30,10 @@ class Goal:
         self.score_range = state['score_range']
         self.data = list(state['data'])
         self.scores = list(state['scores'])
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return f"Goal(title='{self.title}', cron='{self.cron}', score_type='{self.score_type}', " \
+               f"score_range={self.score_range})\n  data:\n  [{', '.join(str(i) for i in self.data)}]"
