@@ -9,6 +9,7 @@ class User:
         self.authorized = False
         self.chat_id: int = -1
         self.jobs = []
+        self.goal_polls = {}
 
     def add_goal(self, goal: Goal):
         self.goals.append(goal)
@@ -21,9 +22,10 @@ class User:
         self.goals = state['goals']
         self.authorized = state['authorized']
         self.jobs = []
+        self.goal_polls = state['goal_polls']
 
     def __getstate__(self):
-        return {'id': self.id, 'goals': self.goals, 'authorized': self.authorized}
+        return {'id': self.id, 'goals': self.goals, 'authorized': self.authorized, 'goal_polls': self.goal_polls}
 
     def __eq__(self, other):
         if isinstance(other, User):

@@ -9,9 +9,6 @@ from typing import Any, Callable, Optional
 def authorize_user(update: Update, context: CallbackContext):
     poll_id = update.poll_answer.poll_id
 
-    if poll_id not in context.bot_data['auth_polls']:
-        return
-
     uid = update.poll_answer.user.id
     if update.poll_answer.option_ids[0] == 0:
         if uid not in context.bot_data['users']:
@@ -30,8 +27,6 @@ def authorize_user(update: Update, context: CallbackContext):
 
 @chat_types('group', 'supergroup')
 def auth_poll(update: Update, context: CallbackContext):
-    if update.effective_chat.type not in ['group', 'supergroup']:
-        return
     options = ['yes', 'no']
     message = context.bot.send_poll(
         update.effective_chat.id,

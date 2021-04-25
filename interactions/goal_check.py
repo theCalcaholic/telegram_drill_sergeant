@@ -2,6 +2,7 @@ from common import cron_pattern
 from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.triggers.cron.expressions import AllExpression
 from telegram.ext import CallbackContext, Dispatcher
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardRemove
 from model import Goal, User
 from typing import List, Union, Iterable
 
@@ -10,7 +11,15 @@ def check_goals(context: CallbackContext):
     user_id = int(context.job.context['user_id'])
     goals: List[Goal] = context.job.context['goals']
     user: User = context.bot_data['users'][user_id]
-    context.bot.send_message(user.chat_id, f'Did you meet your goals {", ".join(g.title for g in goals)}?')
+    context.bot.send_message(user.chat_id,
+                             'Please select whether or not you have met your goals during the last period:')
+    for goal in goals:
+        keyboard = [
+            [InlineKeyboardButton("yes", callback_data=f'goal_check:{user_id}:{goal.title}:true'),
+             InlineKeyboardButton("no", callback_data=f'goal_check:{user_id}:{goal.title}:false')]
+        ]
+        context.bot.send_message(user.chat_id, f'Did you meet your goal {goal.title}?',
+                                 reply_markup=InlineKeyboardMarkup(keyboard))
 
 
 def schedule_all_goal_checks(context: Union[CallbackContext, Dispatcher]):
@@ -58,3 +67,17 @@ def schedule_goal_check(context: Union[CallbackContext, Dispatcher], user: User,
     print(f"Scheduled job {job.name}")
     print("trigger: ", job_kwargs)
 
+
+def handle_goal_check_response(update: Update, context: CallbackContext):
+    query = update.callback_query
+    _, uid, goal_title, choice = query.data.split(':')
+    if int(uid) not in context.bot_data['users'] \
+            or goal_title not in (g.title for g in context.bot_data['users'][int(uid)].goals):
+        print(f"ERROR: Could not find goal for goal check response '{update.message}'!")
+        update.message.reply_text('Sorry, something went wrong. Please contact the bot developer')
+        return
+
+    goal = next(goal for goal in context.bot_data['users'][int(uid)].goals if goal.title == goal_title)
+    goal.data.append(True if choice == 'true' else False)
+    query.answer()
+    query.edit_message_text(query.message.text + (u' \u2705' if goal.data[-1] else u' \u274c'))

@@ -35,7 +35,10 @@ def add_goal(update: Update, context: CallbackContext) -> AddGoalState:
 @authorized(AddGoalState.CANCEL)
 @chat_types('private')
 def add_goal_set_title(update: Update, context: CallbackContext):
-    print("add_goal_set_title")
+    title = update.message.text.strip()
+    if title in (g.title for g in context.bot_data['users'][update.effective_user.id].goals):
+        update.message.reply_text('You already have a goal with that title. Please try again')
+        return AddGoalState.TITLE
     context.chat_data['goal_data']['title'] = update.message.text
     update.message.reply_text('Perfect. Now please select the type of schedule for your goal from the given options',
                               reply_markup=ReplyKeyboardMarkup([goal_schedule_types[:2], goal_schedule_types[2:]],
