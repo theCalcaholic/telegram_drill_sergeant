@@ -91,25 +91,16 @@ def add_goal_set_day_of_week(update: Update, context: CallbackContext):
 @authorized(AddGoalState.CANCEL)
 @chat_types('private')
 def add_goal_set_cron_schedule(update: Update, context: CallbackContext):
-    cron_match = cron_pattern.fullmatch(update.message.text)
-    is_valid = False
-    err = ''
-    if cron_match:
-        try:
-            CronTrigger(minute=cron_match.group('minute'), hour=cron_match.group('hour'), day=cron_match.group('dom'),
-                        month=cron_match.group('month'), day_of_week=cron_match.group('dow'))
-            is_valid = True
-        except ValueError as e:
-            err = str(e)
-
-    if not is_valid:
-        update.message.reply_text(f'This cron expression is invalid ({err})! Please try again')
+    try:
+        CronTrigger.from_crontab(update.message.text)
+    except ValueError as e:
+        update.message.reply_text(f'This cron expression is invalid ({str(e)})! Please try again')
         return AddGoalState.CRON_SCHEDULE
 
     context.chat_data['goal_data']['cron'] = update.message.text
     update.message.reply_text('Good. Now select the type of score you\'d like.',
                               reply_markup=ReplyKeyboardMarkup([[button] for button in goal_score_types],
-                                                               one_time_keyboard=True))
+                                                               one_time_keyboard=True, ))
     return AddGoalState.SCORE_TYPE
 
 
@@ -153,10 +144,7 @@ def add_goal_confirm(update: Update, context: CallbackContext):
 
     goal = create_goal_from_user_input(context.chat_data['goal_data'])
     user = context.bot_data['users'][update.effective_user.id]
-    print("Adding goal:")
     user.add_goal(goal)
-    context.dispatcher.persistence.update_bot_data(context.bot_data)
-    print(context.bot_data)
     context.chat_data['goal_data'] = None
 
     schedule_goal_check(context, user, (g for g in user.goals if g.cron == goal.cron), goal.cron)

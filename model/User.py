@@ -23,9 +23,11 @@ class User:
         self.authorized = state['authorized']
         self.jobs = []
         self.goal_polls = state['goal_polls']
+        self.chat_id = state['chat_id']
 
     def __getstate__(self):
-        return {'id': self.id, 'goals': self.goals, 'authorized': self.authorized, 'goal_polls': self.goal_polls}
+        return {'id': self.id, 'goals': self.goals, 'authorized': self.authorized, 'goal_polls': self.goal_polls,
+                'chat_id': self.chat_id}
 
     def __str__(self):
         return self.__repr__()
