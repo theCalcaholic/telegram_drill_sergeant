@@ -26,3 +26,4 @@ class UserList(List[User]):
                 return False
 
         return super().__contains__(item)
+

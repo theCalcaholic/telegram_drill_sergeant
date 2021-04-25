@@ -153,7 +153,10 @@ def add_goal_confirm(update: Update, context: CallbackContext):
 
     goal = create_goal_from_user_input(context.chat_data['goal_data'])
     user = context.bot_data['users'][update.effective_user.id]
+    print("Adding goal:")
     user.add_goal(goal)
+    context.dispatcher.persistence.update_bot_data(context.bot_data)
+    print(context.bot_data)
     context.chat_data['goal_data'] = None
 
     schedule_goal_check(context, user, (g for g in user.goals if g.cron == goal.cron), goal.cron)

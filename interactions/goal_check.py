@@ -41,7 +41,7 @@ def schedule_all_goal_checks_for_user(context: Union[CallbackContext, Dispatcher
     for goal in sorted(goals, key=lambda g: g.cron):
         if not grouped_by_cron or grouped_by_cron[-1][-1].cron != goal.cron:
             grouped_by_cron.append([])
-        grouped_by_cron[-1][-1].append(goal)
+        grouped_by_cron[-1].append(goal)
     print(f"goals: [{'] ['.join(', '.join(g.title for g in gs) for gs in grouped_by_cron)}]")
 
     for grouped_goals in grouped_by_cron:

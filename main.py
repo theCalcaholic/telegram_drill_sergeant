@@ -70,7 +70,7 @@ def user_stats(update: Update, context: CallbackContext):
     stats_text = ""
 
     score_formats = {
-        goal_score_types[0]: "{} days",
+        goal_score_types[0]: " streak of {}",
         goal_score_types[1]: "{} %",
         goal_score_types[2]: "{}/{}"
     }
@@ -92,6 +92,10 @@ def handle_stats(update: Update, context: CallbackContext):
 if __name__ == '__main__':
     persistence = PicklePersistence(filename='driserbot_state')
     updater = Updater(token=bot_token, use_context=True, persistence=persistence)
+
+    print("Model loaded from state:")
+    print(updater.dispatcher.bot_data)
+
     initialize(updater.dispatcher)
     schedule_all_goal_checks(updater.dispatcher)
 
@@ -104,4 +108,7 @@ if __name__ == '__main__':
 
     updater.start_polling()
     updater.idle()
+
+    print("Saved data:")
+    PicklePersistence(filename='driserbot_state').get_bot_data()
 

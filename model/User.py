@@ -27,8 +27,9 @@ class User:
     def __getstate__(self):
         return {'id': self.id, 'goals': self.goals, 'authorized': self.authorized, 'goal_polls': self.goal_polls}
 
-    def __eq__(self, other):
-        if isinstance(other, User):
-            return self.id == other.id
+    def __str__(self):
+        return self.__repr__()
 
-        return super().__eq__(other)
+    def __repr__(self):
+        return f"User(id={self.id}, authorized={self.authorized}, goals={str(self.goals)}, jobs={self.jobs}, " \
+               f"goal_polls={self.goal_polls}"
