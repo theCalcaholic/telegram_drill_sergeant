@@ -7,6 +7,8 @@ class User:
         self.id = user_id
         self.goals: List[Goal] = []
         self.authorized = False
+        self.chat_id: int = -1
+        self.jobs = []
 
     def add_goal(self, goal: Goal):
         self.goals.append(goal)
@@ -18,6 +20,7 @@ class User:
         self.id = state['id']
         self.goals = state['goals']
         self.authorized = state['authorized']
+        self.jobs = []
 
     def __getstate__(self):
         return {'id': self.id, 'goals': self.goals, 'authorized': self.authorized}

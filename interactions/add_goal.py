@@ -4,8 +4,10 @@ from telegram.ext import Updater, MessageHandler, Filters, CommandHandler, Callb
     PollAnswerHandler, PicklePersistence, ConversationHandler
 from common import days_of_week, goal_score_types, chat_types, goal_schedule_types, cron_pattern, goal_score_types_regex
 from interactions.auth import authorized
+from interactions.goal_check import schedule_goal_check
 from typing import Any, Dict
 from model import Goal, User
+from apscheduler.triggers.cron import CronTrigger
 
 
 class AddGoalState(Enum):
@@ -86,8 +88,19 @@ def add_goal_set_day_of_week(update: Update, context: CallbackContext):
 @authorized(AddGoalState.CANCEL)
 @chat_types('private')
 def add_goal_set_cron_schedule(update: Update, context: CallbackContext):
-    if not cron_pattern.fullmatch(update.message.text):
-        update.message.reply_text('This cron expression is invalid! Please try again')
+    cron_match = cron_pattern.fullmatch(update.message.text)
+    is_valid = False
+    err = ''
+    if cron_match:
+        try:
+            CronTrigger(minute=cron_match.group('minute'), hour=cron_match.group('hour'), day=cron_match.group('dom'),
+                        month=cron_match.group('month'), day_of_week=cron_match.group('dow'))
+            is_valid = True
+        except ValueError as e:
+            err = str(e)
+
+    if not is_valid:
+        update.message.reply_text(f'This cron expression is invalid ({err})! Please try again')
         return AddGoalState.CRON_SCHEDULE
 
     context.chat_data['goal_data']['cron'] = update.message.text
@@ -135,13 +148,12 @@ def add_goal_set_score_range(update: Update, context: CallbackContext):
 @chat_types('private')
 def add_goal_confirm(update: Update, context: CallbackContext):
 
-    if update.effective_user.id not in context.bot_data['users']:
-        context.bot_data['users'][update.effective_user.id] = User(update.effective_user.id)
-
     goal = create_goal_from_user_input(context.chat_data['goal_data'])
-    context.bot_data['users'][update.effective_user.id].add_goal(goal)
+    user = context.bot_data['users'][update.effective_user.id]
+    user.add_goal(goal)
     context.chat_data['goal_data'] = None
 
+    schedule_goal_check(context, user, (g for g in user.goals if g.cron == goal.cron), goal.cron)
     update.message.reply_text(f'Added goal {goal.title}', reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
@@ -158,7 +170,8 @@ def create_goal_from_user_input(goal_data: Dict) -> Goal:
 
     if goal_data['schedule_type'] == 'cron syntax':
         match = cron_pattern.fullmatch(goal_data['cron'])
-        cron_schedule = f"0 {match.group('hour')} {match.group('dom')} {match.group('month')} {match.group('dow')}"
+        cron_schedule = f"{match.group('minute')} {match.group('hour')} {match.group('dom')} {match.group('month')} " \
+                        f"{match.group('dow')}"
     elif goal_data['schedule_type'] == 'daily':
         cron_schedule = f"0 11 * * *"
     elif goal_data['schedule_type'] == 'weekly':
