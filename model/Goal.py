@@ -18,8 +18,9 @@ class Goal:
         self.waiting_for_data = False
 
     def add_data(self, value: int, time_end: datetime):
-        data_point = {'value': value, 'time': time_end.timestamp(), 'score': self.calculate_score()}
+        data_point = {'value': value, 'time': time_end.timestamp(), 'score': -1}
         self.data.append(data_point)
+        self.data[-1]['score'] = self.calculate_score()
         start = 0
         if self.score_range != -1:
             start = max(len(self.data) - self.score_range, 0)

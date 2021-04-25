@@ -5,6 +5,7 @@ from typing import List
 class User:
     def __init__(self, user_id: int):
         self.id = user_id
+        self.name: str = str(user_id)
         self.goals: List[Goal] = []
         self.authorized = False
         self.chat_id: int = -1
@@ -19,6 +20,7 @@ class User:
 
     def __setstate__(self, state):
         self.id = state['id']
+        self.name = state['name']
         self.goals = state['goals']
         self.authorized = state['authorized']
         self.jobs = []
@@ -27,7 +29,7 @@ class User:
 
     def __getstate__(self):
         return {'id': self.id, 'goals': self.goals, 'authorized': self.authorized, 'goal_polls': self.goal_polls,
-                'chat_id': self.chat_id}
+                'chat_id': self.chat_id, 'name': self.name}
 
     def __str__(self):
         return self.__repr__()

@@ -5,8 +5,8 @@ import re
 admin_id = int(os.environ['BOT_ADMIN_ID'])
 
 goal_schedule_types = ['daily', 'weekly', 'cron syntax']
-goal_score_types = ['number of days', 'floating average', 'floating amount (x/10)']
-goal_score_types_regex = r'^(number of days|floating average|floating amount .x.10.)$'
+goal_score_types = ['number of successes', 'floating average', 'floating amount (x/10)']
+goal_score_types_regex = r'^(number of successes|floating average|floating amount .x.10.)$'
 goal_score_types_regex_comp = re.compile(goal_score_types_regex)
 for t in goal_score_types:
     assert goal_score_types_regex_comp.fullmatch(t) is not None

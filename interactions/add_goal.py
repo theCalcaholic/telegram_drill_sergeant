@@ -1,3 +1,4 @@
+import re
 from enum import Enum
 from telegram import Update, ChatAction, Poll, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler, CallbackContext, PollHandler, \
@@ -109,16 +110,16 @@ def add_goal_set_cron_schedule(update: Update, context: CallbackContext):
 def add_goal_set_score_type(update: Update, context: CallbackContext):
     score_type = update.message.text
     context.chat_data['goal_data']['score_type'] = score_type
-    if score_type == 'number of days':
+    if score_type == goal_score_types[0]:
         context.chat_data['goal_data']['score_range'] = -1
         goal = create_goal_from_user_input(context.chat_data['goal_data'])
         update.message.reply_text(f"The following goal will be added: \n\n"
                                   f"{get_goal_summary(goal)}",
                                   reply_markup=ReplyKeyboardMarkup([['Confirm', 'Cancel']]))
         return AddGoalState.CONFIRM
-    elif score_type in ['floating average', 'floating amount (e.g. 8/10)']:
-        update.message.reply_text('Please send me a number that determines, for how many days in the past the score '
-                                  'will be calculated', reply_markup=ReplyKeyboardRemove())
+    elif score_type in goal_score_types[1:]:
+        update.message.reply_text('Please send me a number that determines, for how many time periods in the past the '
+                                  'score will be calculated', reply_markup=ReplyKeyboardRemove())
         return AddGoalState.SCORE_FLOATING_RANGE
 
 
