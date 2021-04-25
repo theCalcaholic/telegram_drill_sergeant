@@ -1,7 +1,9 @@
 import os
 import re
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, Dispatcher
+from model import UserList, User
+from typing import Callable, Any, Union, List, Optional
 
 admin_id = os.environ['BOT_ADMIN_ID']
 
@@ -13,21 +15,26 @@ cron_pattern = re.compile(r'(?P<minute>(\d+/)?\*|\d+)( *(?P<hour>(\d+/)?\*|\d+))
 days_of_week = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Sat']
 
 
-def require_authorization(update: Update, context: CallbackContext):
-    if update.effective_user.id not in context.bot_data['authorized_users']:
-        print(f'User {update.effective_user.id} is not authorized!')
-        print(context.bot_data['authorized_users'])
-        update.effective_chat.send_message("Sorry, you're not authorized to use the Drill Sergeant.")
-        return False
-    return True
+def chat_types(*types: ...):
+
+    def inner(func: Callable[[Update, Any], Any]):
+        def wrapped(update: Update, *args, **kwargs):
+            if update.effective_chat.type not in types:
+                update.message.reply_text(f'This action is only available in {" and ".join(types)} chats')
+                return
+            return func(update, *args, **kwargs)
+        return wrapped
+
+    return inner
 
 
-def initialize(context: CallbackContext):
-    print(context.bot_data)
-    print(admin_id)
-    if 'authorized_users' not in context.bot_data:
-        context.bot_data['authorized_users'] = set()
-    if len(context.bot_data['authorized_users']) == 0:
-        context.bot_data['authorized_users'].add(int(admin_id))
-    if 'goals' not in context.bot_data:
-        context.bot_data['goals'] = {}
+def initialize(dispatcher: Dispatcher):
+    if 'users' not in dispatcher.bot_data:
+        dispatcher.bot_data['users'] = UserList()
+
+    if admin_id not in dispatcher.bot_data['users']:
+        dispatcher.bot_data['users'].append(User(int(admin_id)))
+        dispatcher.bot_data['users'][int(admin_id)].authorized = True
+
+    if 'auth_polls' not in dispatcher.bot_data:
+        dispatcher.bot_data['auth_polls'] = {}

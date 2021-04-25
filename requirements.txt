@@ -1,2 +1,2 @@
 python-telegram-bot>=13.4
-python-crontab>=2.5
+APScheduler>=3.6

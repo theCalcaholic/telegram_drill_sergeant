@@ -2,10 +2,10 @@ from enum import Enum
 from telegram import Update, ChatAction, Poll, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler, CallbackContext, PollHandler, \
     PollAnswerHandler, PicklePersistence, ConversationHandler
-from common import days_of_week, goal_score_types, require_authorization, initialize, goal_schedule_types, \
-    cron_pattern, goal_score_types_regex
+from common import days_of_week, goal_score_types, chat_types, goal_schedule_types, cron_pattern, goal_score_types_regex
+from interactions.auth import authorized
 from typing import Any, Dict
-from model import Goal
+from model import Goal, User
 
 
 class AddGoalState(Enum):
@@ -20,10 +20,9 @@ class AddGoalState(Enum):
     CONFIRM = 8
 
 
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
 def add_goal(update: Update, context: CallbackContext) -> AddGoalState:
-    initialize(context)
-    if not require_authorization(update, context) or update.effective_chat.type != 'private':
-        return AddGoalState.CANCEl
 
     update.message.reply_text('Please send me a title for your goal')
 
@@ -31,6 +30,8 @@ def add_goal(update: Update, context: CallbackContext) -> AddGoalState:
     return AddGoalState.TITLE
 
 
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
 def add_goal_set_title(update: Update, context: CallbackContext):
     print("add_goal_set_title")
     context.chat_data['goal_data']['title'] = update.message.text
@@ -41,6 +42,8 @@ def add_goal_set_title(update: Update, context: CallbackContext):
     return AddGoalState.SCHEDULE_TYPE
 
 
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
 def add_goal_set_schedule_type_daily(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['schedule_type'] = 'daily'
     update.message.reply_text('Alright. Now select the type of score you\'d like.',
@@ -49,6 +52,8 @@ def add_goal_set_schedule_type_daily(update: Update, context: CallbackContext):
     return AddGoalState.SCORE_TYPE
 
 
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
 def add_goal_set_schedule_type_weekly(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['schedule_type'] = 'weekly'
     update.message.reply_text('Alright. Now please select the day you would like to be asked whether or not'
@@ -58,13 +63,18 @@ def add_goal_set_schedule_type_weekly(update: Update, context: CallbackContext):
     return AddGoalState.DAY_OF_WEEK
 
 
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
 def add_goal_set_schedule_type_cron(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['schedule_type'] = 'cron syntax'
-    update.message.reply_text('Alright. Now please send me the cron expression which will define when to ask you'
-                              'whether or not you met your goal', reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text('Alright. Now please send me the cron expression (see https://cron.help/) which will '
+                              'define when to ask you whether or not you met your goal',
+                              reply_markup=ReplyKeyboardRemove())
     return AddGoalState.CRON_SCHEDULE
 
 
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
 def add_goal_set_day_of_week(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['day_of_week'] = update.message.text
     update.message.reply_text('Good. Now select the type of score you\'d like.',
@@ -73,6 +83,8 @@ def add_goal_set_day_of_week(update: Update, context: CallbackContext):
     return AddGoalState.SCORE_TYPE
 
 
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
 def add_goal_set_cron_schedule(update: Update, context: CallbackContext):
     if not cron_pattern.fullmatch(update.message.text):
         update.message.reply_text('This cron expression is invalid! Please try again')
@@ -85,6 +97,8 @@ def add_goal_set_cron_schedule(update: Update, context: CallbackContext):
     return AddGoalState.SCORE_TYPE
 
 
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
 def add_goal_set_score_type(update: Update, context: CallbackContext):
     score_type = update.message.text
     context.chat_data['goal_data']['score_type'] = score_type
@@ -101,6 +115,8 @@ def add_goal_set_score_type(update: Update, context: CallbackContext):
         return AddGoalState.SCORE_FLOATING_RANGE
 
 
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
 def add_goal_set_score_range(update: Update, context: CallbackContext):
     if not update.message.text.isdigit() or int(update.message.text) > 60:
         update.message.reply_text('Invalid value! The score range must be a positive number < 60. Please try again.')
@@ -115,18 +131,18 @@ def add_goal_set_score_range(update: Update, context: CallbackContext):
     return AddGoalState.CONFIRM
 
 
+@authorized(ConversationHandler.END)
+@chat_types('private')
 def add_goal_confirm(update: Update, context: CallbackContext):
-    if not require_authorization(update, context) or update.effective_chat.type != 'private':
-        return
 
-    if update.effective_user.id not in context.bot_data['goals']:
-        context.bot_data['goals'][update.effective_user.id] = []
+    if update.effective_user.id not in context.bot_data['users']:
+        context.bot_data['users'][update.effective_user.id] = User(update.effective_user.id)
 
     goal = create_goal_from_user_input(context.chat_data['goal_data'])
-    context.bot_data['goals'][update.effective_user.id].append(goal)
+    context.bot_data['users'][update.effective_user.id].add_goal(goal)
     context.chat_data['goal_data'] = None
 
-    update.message.reply_text(f'Added goal {goal["title"]}', reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text(f'Added goal {goal.title}', reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
 
@@ -152,12 +168,12 @@ def create_goal_from_user_input(goal_data: Dict) -> Goal:
                 goal_data['chat_id'])
 
 
-def get_goal_summary(goal: Dict) -> str:
-    summary = f"Title: {goal['title']}\n" \
-           f"Schedule: {goal['cron']}\n" \
-           f"Score: {goal['score_type']}"
-    if goal['score_range'] != -1:
-        summary += f"\nScore Range: {goal['score_range']}"
+def get_goal_summary(goal: Goal) -> str:
+    summary = f"Title: {goal.title}\n" \
+           f"Schedule: {goal.cron}\n" \
+           f"Score: {goal.score_type}"
+    if goal.score_range != -1:
+        summary += f"\nScore Range: {goal.score_range}"
     return summary
 
 
