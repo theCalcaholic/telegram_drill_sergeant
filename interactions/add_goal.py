@@ -65,6 +65,9 @@ def add_goal_set_schedule_type_daily(update: Update, context: CallbackContext):
 @authorized(AddGoalState.CANCEL)
 @chat_types('private')
 def add_goal_set_schedule_daily_time(update: Update, context: CallbackContext):
+    if update.message is None:
+        update.effective_message.reply_text('I didn\'t understand that. Please try again')
+        return AddGoalState.SCHEDULE_DAILY_TIME
     match = re.match(r'(?P<hour>[0-9]{1,2}):(?P<minute>[0-9]{1,2})', update.message.text)
     if match is None or not match.group('hour').isdigit() or not match.group('minute').isdigit() \
             or int(match.group('hour')) > 23 or int(match.group('minute')) > 59:
