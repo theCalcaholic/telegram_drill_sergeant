@@ -18,6 +18,10 @@ class User:
     def remove_goal(self, goal: Goal):
         self.goals.remove(goal)
 
+    def find_goal_by_title(self, title: str) -> Goal:
+        index = [g.title for g in self.goals].index(title)
+        return self.goals[index]
+
     def __setstate__(self, state):
         self.id = state['id']
         self.name = state['name']

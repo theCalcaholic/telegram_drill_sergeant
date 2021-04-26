@@ -89,9 +89,9 @@ def delete_goal(update: Update, context: CallbackContext):
         return
 
     user = context.bot_data['users'][int(user_id)]
-    index = [g.title for g in user.goals].index(goal_title)
-    schedule = user.goals[index].cron
-    del user.goals[index]
+    goal = user.find_goal_by_title(goal_title)
+    schedule = goal.cron
+    user.remove_goal(goal)
     schedule_goal_check(context, user, (g for g in user.goals if g.cron == schedule), schedule)
     query.answer('The goal has been deleted.')
 
