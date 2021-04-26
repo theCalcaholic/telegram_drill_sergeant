@@ -1,5 +1,5 @@
 from common import chat_types
-from telegram import Update, Chat, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, Chat, InlineKeyboardButton, InlineKeyboardMarkup, User as TelegramUser
 from telegram.ext import CallbackContext
 from model import User
 from typing import Any, Callable, Optional
@@ -71,6 +71,7 @@ def authorize_user(update: Update, context: CallbackContext):
 
         if time.time() - context.chat_data.get(secret + '_close_timestamp', 0) > 10:
             context.chat_data[secret + '_close_timestamp'] = time.time()
+            context.chat_data[secret + '_close_uid'] = query.from_user.id
             query.answer('If you really want to close the dialog for all users, press the button again')
             query.edit_message_reply_markup(reply_markup=get_auth_keyboard(context, secret))
 
@@ -80,6 +81,11 @@ def authorize_user(update: Update, context: CallbackContext):
 
             context.job_queue.run_once(reset_buttons, 10)
             return
+
+        if context.chat_data[secret + '_close_uid'] != query.from_user.id:
+            query.answer('Only the user who pressed the button for the first time can confirm the closing!')
+            return
+
         context.chat_data['auth_secrets'].remove(secret)
         del context.chat_data[secret + '_authcount']
         if secret + '_close_timestamp' in context.chat_data:
@@ -87,10 +93,23 @@ def authorize_user(update: Update, context: CallbackContext):
         query.answer('authorization dialog closed!')
 
     msg_text = authorization_dialog_text.format(auth_count, group_user_count) \
-               + ('\n\n--closed--' if action == 'close' else '')
+               + (f'\n\n--closed by {find_user_name(query.from_user)}--' if action == 'close' else '')
     if msg_text != query.message.text:
         query.edit_message_text(msg_text,
                                 reply_markup=get_auth_keyboard(context, secret) if action != 'close' else None)
+
+
+def find_user_name(user_data: TelegramUser):
+    name = user_data.id
+    if user_data.username:
+        name = user_data.username
+    elif user_data.first_name:
+        name = user_data.first_name
+        if user_data.last_name:
+            name += f' {user_data.last_name}'
+    return name
+
+
 
 
 @chat_types('group', 'supergroup')
