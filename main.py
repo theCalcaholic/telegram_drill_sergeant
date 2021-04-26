@@ -101,12 +101,11 @@ def handle_stats(update: Update, context: CallbackContext):
     if update.effective_chat.type == 'private':
         text = get_user_stats(context.bot_data['users'][update.effective_user.id])
         update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
+        return
     elif update.effective_chat.type in ['group', 'supergroup']:
         if 'users' not in context.chat_data:
             update.message.reply_text('No users have registered for this group')
             return
-
-        print(context.chat_data['users'])
 
         text = ""
         for user_id in context.chat_data['users']:
@@ -121,7 +120,8 @@ def handle_stats(update: Update, context: CallbackContext):
             text += markdown_v2_escape(f"============\n") + f"*{markdown_v2_escape(user.name)}:*\n"
             text += get_user_stats(user)
             text += markdown_v2_escape(f"============\n\n")
-            update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
+
+        update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 @chat_types('private')
