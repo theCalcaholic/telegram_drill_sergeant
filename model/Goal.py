@@ -39,7 +39,7 @@ class Goal:
 
     def calculate_score_floating_amount(self) -> float:
         count = min(self.score_range, len(self.data))
-        return sum((d['value'] for d in self.data[:count]), 0.0)
+        return int(sum((d['value'] for d in self.data[:count]), 0.0))
 
     def calculate_score(self) -> Union[float, int]:
         score = float('nan')
