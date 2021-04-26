@@ -64,8 +64,8 @@ def add_goal_set_schedule_type_weekly(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['schedule_type'] = 'weekly'
     update.message.reply_text('Alright. Now please select the day you would like to be asked whether or not'
                               'you met your goal.',
-                              reply_markup=ReplyKeyboardMarkup([['Mon', 'Tue'], ['Wed', 'Thu'],
-                                                                ['Fri', 'Sat', 'Sun']], one_time_keyboard=True))
+                              reply_markup=ReplyKeyboardMarkup([days_of_week[:2], days_of_week[2:4],
+                                                                days_of_week[4:7]], one_time_keyboard=True))
     return AddGoalState.DAY_OF_WEEK
 
 
@@ -170,7 +170,7 @@ def create_goal_from_user_input(goal_data: Dict) -> Goal:
     elif goal_data['schedule_type'] == 'daily':
         cron_schedule = f"0 11 * * *"
     elif goal_data['schedule_type'] == 'weekly':
-        cron_schedule = f"0 11 * * {days_of_week[goal_data['day_of_week']]}"
+        cron_schedule = f"0 11 * * {goal_data['day_of_week']}"
 
     return Goal(goal_data['title'], cron_schedule, goal_data['score_type'], goal_data['score_range'],
                 goal_data['chat_id'])
