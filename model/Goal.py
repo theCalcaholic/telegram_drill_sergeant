@@ -68,6 +68,9 @@ class Goal:
         self.score_range = state['score_range']
         self.data = state['data']
         self.waiting_for_data = state['waiting_for_data']
+        if self.score_type == goal_score_types[2]:
+            for i in range(0, len(self.data) - 1):
+                self.data[0].score = int(self.data[0].score)
 
     def __str__(self):
         return self.__repr__()
