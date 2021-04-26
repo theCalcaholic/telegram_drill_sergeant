@@ -122,6 +122,15 @@ def handle_stats(update: Update, context: CallbackContext):
             update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
 
 
+@chat_types('private')
+@authorized
+def debug(update: Update, context: CallbackContext):
+    user = context.bot_data['users'][update.effective_user.id]
+    update.message.reply_text(str(user))
+    for goal in user.goals:
+        update.message.reply_text(str(goal))
+
+
 def show_help_message(update: Update, _):
     msg = f"Drill Sergeant lets you register Goals and supports you with achieving them\\. In order to do so, it " \
           f"will ask you whether or not you have been able to meet your goals and calculates a score to help you " \
@@ -152,6 +161,7 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CommandHandler('stats', handle_stats))
     updater.dispatcher.add_handler(CommandHandler('delete', delete_dialog))
     updater.dispatcher.add_handler(CommandHandler('help', show_help_message))
+    updater.dispatcher.add_handler(CommandHandler('debug', debug))
 
     updater.start_polling()
     updater.idle()
