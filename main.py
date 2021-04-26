@@ -5,7 +5,7 @@ from telegram.ext import Updater, MessageHandler, Filters, CommandHandler, Callb
     PollAnswerHandler, PicklePersistence, ConversationHandler, CallbackQueryHandler
 from typing import Dict, Callable, List
 from common import admin_id, initialize, chat_types, cron_pattern, goal_score_types, markdown_v2_escape
-from interactions import authorized, auth_poll, authorize_user, schedule_all_goal_checks, add_goal_handler, \
+from interactions import authorized, show_auth_dialog, authorize_user, schedule_all_goal_checks, add_goal_handler, \
     handle_goal_check_response, schedule_goal_check
 from model import Goal, User
 
@@ -103,7 +103,7 @@ def handle_stats(update: Update, context: CallbackContext):
         update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
         return
     elif update.effective_chat.type in ['group', 'supergroup']:
-        if 'users' not in context.chat_data:
+        if 'users' not in context.chat_data or len(context.chat_data['users']) == 0:
             update.message.reply_text('No users have registered for this group')
             return
 
@@ -168,16 +168,17 @@ if __name__ == '__main__':
     schedule_all_goal_checks(updater.dispatcher)
 
     updater.dispatcher.add_handler(CommandHandler('start', start))
-    updater.dispatcher.add_handler(CommandHandler('authorize', auth_poll))
-    updater.dispatcher.add_handler(CallbackQueryHandler(handle_goal_check_response, pattern=r'^goal_check:.*$'))
-    updater.dispatcher.add_handler(CallbackQueryHandler(delete_goal, pattern=r'^goal_delete:.*$'))
-    updater.dispatcher.add_handler(PollAnswerHandler(authorize_user))
+    updater.dispatcher.add_handler(CommandHandler('authorize', show_auth_dialog))
     updater.dispatcher.add_handler(add_goal_handler)
     updater.dispatcher.add_handler(CommandHandler('stats', handle_stats))
     updater.dispatcher.add_handler(CommandHandler('delete', delete_dialog))
     updater.dispatcher.add_handler(CommandHandler('help', show_help_message))
     updater.dispatcher.add_handler(CommandHandler('debug', debug))
     updater.dispatcher.add_handler(CommandHandler('info', show_info))
+
+    updater.dispatcher.add_handler(CallbackQueryHandler(handle_goal_check_response, pattern=r'^goal_check:.*$'))
+    updater.dispatcher.add_handler(CallbackQueryHandler(delete_goal, pattern=r'^goal_delete:.*$'))
+    updater.dispatcher.add_handler(CallbackQueryHandler(authorize_user, pattern=r'^authorization_dialog:.*$'))
 
     updater.start_polling()
     updater.idle()
