@@ -77,4 +77,4 @@ class Goal:
 
     def __repr__(self):
         return f"Goal(title='{self.title}', cron='{self.cron}', score_type='{self.score_type}', " \
-               f"score_range={self.score_range})\n  data:\n  [{', '.join(str(i) for i in self.data)}]"
+               f"score_range={self.score_range})\n  data:\n  [{', '.join(str(i) for i in self.data)}])"

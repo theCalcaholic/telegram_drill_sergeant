@@ -129,8 +129,8 @@ def handle_stats(update: Update, context: CallbackContext):
 def debug(update: Update, context: CallbackContext):
     user = context.bot_data['users'][update.effective_user.id]
     update.message.reply_text(str(user))
-    for goal in user.goals:
-        update.message.reply_text(str(goal))
+    # for goal in user.goals:
+    #     update.message.reply_text(str(goal))
 
 
 def show_help_message(update: Update, _):
