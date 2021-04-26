@@ -72,6 +72,12 @@ def authorize_user(update: Update, context: CallbackContext):
         if time.time() - context.chat_data.get(secret + '_close_timestamp', 0) > 10:
             context.chat_data[secret + '_close_timestamp'] = time.time()
             query.answer('If you really want to close the dialog for all users, press the button again')
+            query.edit_message_reply_markup(reply_markup=get_auth_keyboard(context, secret))
+
+            def reset_buttons(ctx):
+                query.edit_message_reply_markup(reply_markup=get_auth_keyboard(context, secret))
+
+            context.job_queue.run_once(reset_buttons, 10)
             return
         context.chat_data['auth_secrets'].remove(secret)
         del context.chat_data[secret + '_authcount']
@@ -83,7 +89,7 @@ def authorize_user(update: Update, context: CallbackContext):
                + ('\n\n--closed--' if action == 'close' else '')
     if msg_text != query.message.text:
         query.edit_message_text(msg_text,
-                                reply_markup=query.message.reply_markup if action != 'close' else None)
+                                reply_markup=get_auth_keyboard(context, secret) if action != 'close' else None)
 
 
 @chat_types('group', 'supergroup')
@@ -95,19 +101,28 @@ def show_auth_dialog(update: Update, context: CallbackContext):
             context.chat_data[key] = set()
     context.chat_data[secret + '_authcount'] = 0
     context.chat_data['auth_secrets'].add(secret)
+
+    group_user_count = len(context.chat_data['users'])
+    auth_count = context.chat_data[secret + '_authcount']
+    keyboard = get_auth_keyboard(context, secret)
+    update.message.reply_text(authorization_dialog_text.format(auth_count, group_user_count),
+                              reply_markup=keyboard)
+
+
+def get_auth_keyboard(context, secret: str):
+    close_text = 'Close Dialog'
+    if time.time() - context.chat_data.get(secret + '_close_timestamp', 0) <= 10:
+        close_text = 'Really?'
+
     option_template = f'authorization_dialog:{secret}:{{}}'
     keyboard = [[
         InlineKeyboardButton('de-/authorize me', callback_data=option_template.format('authorize')),
         InlineKeyboardButton('un-/register me for this group',
                              callback_data=option_template.format('group_registration'))
     ], [
-        InlineKeyboardButton('Close Dialog', callback_data=option_template.format('close'))
+        InlineKeyboardButton(close_text, callback_data=option_template.format('close'))
     ]]
-
-    group_user_count = len(context.chat_data['users'])
-    auth_count = context.chat_data[secret + '_authcount']
-    update.message.reply_text(authorization_dialog_text.format(auth_count, group_user_count),
-                              reply_markup=InlineKeyboardMarkup(keyboard))
+    return InlineKeyboardMarkup(keyboard)
 
 
 def authorize_user_old(update: Update, context: CallbackContext):
