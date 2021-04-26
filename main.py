@@ -55,6 +55,8 @@ def get_user_stats(user: User):
         stats_text += f"\\- *{goal.title}*  "
         stats_text += score_escaped
         stats_text += "\n"
+    if stats_text == "":
+        return "No goals registered"
     return stats_text
 
 
