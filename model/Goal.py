@@ -70,7 +70,7 @@ class Goal:
         self.waiting_for_data = state['waiting_for_data']
         if self.score_type == goal_score_types[2]:
             for i in range(0, len(self.data) - 1):
-                self.data[0].score = int(self.data[0].score)
+                self.data[i].score = int(self.data[i].score)
 
     def __str__(self):
         return self.__repr__()
