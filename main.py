@@ -48,8 +48,9 @@ def get_user_stats(user: User):
     for goal in goals:
         try:
             score_escaped = score_formats[goal.score_type].format(stats[goal], goal.score_range)
-        except ValueError:
+        except ValueError as e:
             score_escaped = "<error>"
+            print(e)
         score_escaped = markdown_v2_escape(score_escaped)
         stats_text += f"\\- *{goal.title}*  "
         stats_text += score_escaped
