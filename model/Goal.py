@@ -37,7 +37,7 @@ class Goal:
     def calculate_score_floating_average(self) -> float:
         return self.calculate_score_floating_amount() / self.score_range
 
-    def calculate_score_floating_amount(self) -> float:
+    def calculate_score_floating_amount(self) -> int:
         count = min(self.score_range, len(self.data))
         return int(sum((d['value'] for d in self.data[:count]), 0.0))
 

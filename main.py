@@ -43,10 +43,13 @@ def get_user_stats(user: User):
     score_formats = {
         goal_score_types[0]: " streak of {}",
         goal_score_types[1]: "{:.2f} %",
-        goal_score_types[2]: "{:d}/{:d}"
+        goal_score_types[2]: "{}/{:d}"
     }
     for goal in goals:
-        score_escaped = score_formats[goal.score_type].format(stats[goal], goal.score_range)
+        try:
+            score_escaped = score_formats[goal.score_type].format(stats[goal], goal.score_range)
+        except ValueError:
+            score_escaped = "<error>"
         score_escaped = markdown_v2_escape(score_escaped)
         stats_text += f"\\- *{goal.title}*  "
         stats_text += score_escaped
