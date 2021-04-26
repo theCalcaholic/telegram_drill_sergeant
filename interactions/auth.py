@@ -5,6 +5,8 @@ from model import User
 from typing import Any, Callable, Optional
 import random
 import string
+from datetime import datetime
+import time
 
 authorization_dialog_text = 'Use the buttons below to de-/authorize or register yourself to be included in this ' \
                             'group\'s statistics\n\n' \
@@ -66,8 +68,15 @@ def authorize_user(update: Update, context: CallbackContext):
         if uid not in context.bot_data['users'] or not context.bot_data['users'][uid].authorized:
             query.answer('You don\'t have permission to close this poll')
             return
+
+        if time.time() - context.chat_data.get(secret + '_close_timestamp', 0) > 10:
+            context.chat_data[secret + '_close_timestamp'] = time.time()
+            query.answer('If you really want to close the dialog for all users, press the button again')
+            return
         context.chat_data['auth_secrets'].remove(secret)
         del context.chat_data[secret + '_authcount']
+        if secret + '_close_timestamp' in context.chat_data:
+            del context.chat_data[secret + '_close_timestamp']
         query.answer('authorization dialog closed!')
 
     msg_text = authorization_dialog_text.format(auth_count, group_user_count) \
