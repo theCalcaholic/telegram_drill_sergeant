@@ -35,5 +35,5 @@ class User:
         return self.__repr__()
 
     def __repr__(self):
-        return f"User(id={self.id}, authorized={self.authorized}, goals={str(self.goals)}, jobs={self.jobs}, " \
-               f"goal_polls={self.goal_polls}"
+        return f"User(id={self.id}, authorized={self.authorized}, goals={str(self.goals)},\njobs={self.jobs},\n" \
+               f"goal_polls={self.goal_polls})"
