@@ -3,6 +3,7 @@ from enum import Enum
 from telegram import Update, ChatAction, Poll, ReplyKeyboardMarkup, ReplyKeyboardRemove, ParseMode
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler, CallbackContext, PollHandler, \
     PollAnswerHandler, PicklePersistence, ConversationHandler, CallbackQueryHandler
+import cron_descriptor
 from common import days_of_week, goal_score_types, chat_types, goal_schedule_types, cron_pattern, goal_score_types_regex
 from interactions.auth import authorized
 from interactions.goal_check import schedule_goal_check
@@ -134,7 +135,7 @@ def add_goal_set_score_type(update: Update, context: CallbackContext):
         context.chat_data['goal_data']['score_range'] = -1
         goal = create_goal_from_user_input(context.chat_data['goal_data'])
         update.message.reply_text(f"The following goal will be added: \n\n"
-                                  f"{get_goal_summary(goal)}",
+                                  f"{str(goal)}",
                                   reply_markup=ReplyKeyboardMarkup([['Confirm', 'Cancel']]))
         return AddGoalState.CONFIRM
     elif score_type in goal_score_types[1:]:
@@ -153,7 +154,7 @@ def add_goal_set_score_range(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['score_range'] = int(update.message.text)
     goal = create_goal_from_user_input(context.chat_data['goal_data'])
     update.message.reply_text(f"The following goal will be added: \n\n"
-                              f"{get_goal_summary(goal)}",
+                              f"{str(goal)}",
                               reply_markup=ReplyKeyboardMarkup([['Confirm', 'Cancel']]))
 
     return AddGoalState.CONFIRM
@@ -197,15 +198,6 @@ def create_goal_from_user_input(goal_data: Dict) -> Goal:
 
     return Goal(goal_data['title'], cron_schedule, goal_data['score_type'], goal_data['score_range'],
                 goal_data['chat_id'])
-
-
-def get_goal_summary(goal: Goal) -> str:
-    summary = f"Title: {goal.title}\n" \
-           f"Schedule: {goal.cron}\n" \
-           f"Score: {goal.score_type}"
-    if goal.score_range != -1:
-        summary += f"\nScore Range: {goal.score_range}"
-    return summary
 
 
 

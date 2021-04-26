@@ -22,13 +22,17 @@ def check_goals(context: CallbackContext):
     time_end: datetime = cron.get_prev(ret_type=datetime)
     time_start: datetime = cron.get_prev(ret_type=datetime)
     time_period = (time_end - time_start)
+    print(time_period.seconds)
+    print(time_period.total_seconds())
 
-    if time_period.seconds / 60 < 120:
-        time_string = f'{time_period.seconds / 60} minutes'
+    if time_period.total_seconds() / 60 < 120:
+        time_string = f'{int(time_period.total_seconds() / 60)} minutes'
     elif time_period.seconds / 3600 < 24:
-        time_string = f'{time_period.seconds / 3600} hours'
+        time_string = f'{int(time_period.total_seconds() / 3600)} hours'
     else:
         time_string = f'{time_period.days} days'
+        if time_period.seconds >= 3600:
+            time_string += f', {int(time_period.seconds / 3600)} hours'
 
     context.bot.send_message(user.chat_id,
                              f'Please select whether or not you have met your goals during the last {time_string}')

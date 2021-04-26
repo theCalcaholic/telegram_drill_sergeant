@@ -1,8 +1,11 @@
 from datetime import datetime
-from apscheduler.triggers.cron import CronTrigger
 from typing import List, Dict, Union
 from common.constants import goal_score_types
-from croniter import croniter
+import cron_descriptor
+
+cron_descriptor_options = cron_descriptor.Options()
+cron_descriptor_options.use_24hour_time_format = True
+# cron_descriptor_options.verbose = True #TODO: Reenable once 'every day' duplication is fixed
 
 
 class Goal:
@@ -73,7 +76,12 @@ class Goal:
                 self.data[i].score = int(self.data[i].score)
 
     def __str__(self):
-        return self.__repr__()
+        summary = f"Title: {self.title}\n" \
+                  f"Schedule: {cron_descriptor.ExpressionDescriptor(self.cron, cron_descriptor_options)}\n" \
+                  f"Score: {self.score_type}"
+        if self.score_range != -1:
+            summary += f"\nScore Range: {self.score_range}"
+        return summary
 
     def __repr__(self):
         return f"Goal(title='{self.title}', cron='{self.cron}', score_type='{self.score_type}', " \

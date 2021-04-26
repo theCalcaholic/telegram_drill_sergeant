@@ -32,7 +32,7 @@ def start(update: Update, context: CallbackContext):
                 if update.effective_user.last_name is not None else ''
 
     update.effective_message.reply_html('Welcome to the Drill Sergeant. Send /add to add a goal or /help to get more '
-                                        'information.')
+                                        'information.', reply_markup=ReplyKeyboardRemove())
 
 
 def get_user_stats(user: User):
@@ -133,6 +133,19 @@ def debug(update: Update, context: CallbackContext):
     #     update.message.reply_text(str(goal))
 
 
+@chat_types('private')
+@authorized
+def show_info(update: Update, context: CallbackContext):
+    user = context.bot_data['users'][update.effective_user.id]
+    text = f"You are registered as {user.name} (id: {user.id})\n\n"
+    text += f"You have {len(user.goals)} goals registered:\n"
+    text += '---\n' if len(user.goals) > 0 else ''
+    for goal in user.goals:
+        text += f"{str(goal)}\n---\n"
+
+    update.message.reply_text(text)
+
+
 def show_help_message(update: Update, _):
     msg = f"Drill Sergeant lets you register Goals and supports you with achieving them\\. In order to do so, it " \
           f"will ask you whether or not you have been able to meet your goals and calculates a score to help you " \
@@ -164,6 +177,7 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CommandHandler('delete', delete_dialog))
     updater.dispatcher.add_handler(CommandHandler('help', show_help_message))
     updater.dispatcher.add_handler(CommandHandler('debug', debug))
+    updater.dispatcher.add_handler(CommandHandler('info', show_info))
 
     updater.start_polling()
     updater.idle()
