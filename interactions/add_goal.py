@@ -1,8 +1,8 @@
 import re
 from enum import Enum
-from telegram import Update, ChatAction, Poll, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update, ChatAction, Poll, ReplyKeyboardMarkup, ReplyKeyboardRemove, ParseMode
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler, CallbackContext, PollHandler, \
-    PollAnswerHandler, PicklePersistence, ConversationHandler
+    PollAnswerHandler, PicklePersistence, ConversationHandler, CallbackQueryHandler
 from common import days_of_week, goal_score_types, chat_types, goal_schedule_types, cron_pattern, goal_score_types_regex
 from interactions.auth import authorized
 from interactions.goal_check import schedule_goal_check
@@ -21,6 +21,10 @@ class AddGoalState(Enum):
     SCORE_TYPE = 6
     SCORE_FLOATING_RANGE = 7
     CONFIRM = 8
+    SCHEDULE_DAILY_TIME = 9
+
+
+CUSTOM_SCHEDULE_HANDLE = 'CREATE_CUSTOM_SCHEDULE'
 
 
 @authorized(AddGoalState.CANCEL)
@@ -52,6 +56,22 @@ def add_goal_set_title(update: Update, context: CallbackContext):
 @chat_types('private')
 def add_goal_set_schedule_type_daily(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['schedule_type'] = 'daily'
+    update.message.reply_text('Thanks. Now send me the time at which you want to be notified '
+                              '(in the format: HH:MM, e.g. 23:59)', reply_markup=ReplyKeyboardRemove())
+    return AddGoalState.SCHEDULE_DAILY_TIME
+
+
+@authorized(AddGoalState.CANCEL)
+@chat_types('private')
+def add_goal_set_schedule_daily_time(update: Update, context: CallbackContext):
+    match = re.match(r'(?P<hour>[0-9]{1,2}):(?P<minute>[0-9]{1,2})', update.message.text)
+    if match is None or not match.group('hour').isdigit() or not match.group('minute').isdigit() \
+            or int(match.group('hour')) > 23 or int(match.group('minute')) > 59:
+        update.message.reply_text("Sorry, I couldn't parse that time. Please try again (in format `23:59`)",
+                                  parse_mode=ParseMode.MARKDOWN_V2)
+        return AddGoalState.SCHEDULE_DAILY_TIME
+    context.chat_data['goal_data']['schedule_time'] = (int(match.group('hour')), int(match.group('minute')))
+
     update.message.reply_text('Alright. Now select the type of score you\'d like.',
                               reply_markup=ReplyKeyboardMarkup([[button] for button in goal_score_types],
                                                                one_time_keyboard=True))
@@ -168,7 +188,10 @@ def create_goal_from_user_input(goal_data: Dict) -> Goal:
         cron_schedule = f"{match.group('minute')} {match.group('hour')} {match.group('dom')} {match.group('month')} " \
                         f"{match.group('dow')}"
     elif goal_data['schedule_type'] == 'daily':
-        cron_schedule = f"0 11 * * *"
+        if 'schedule_time' in goal_data:
+            cron_schedule = f"{ goal_data['schedule_time'][1] } { goal_data['schedule_time'][0] } * * *"
+        else:
+            cron_schedule = f"0 11 * * *"
     elif goal_data['schedule_type'] == 'weekly':
         cron_schedule = f"0 11 * * {goal_data['day_of_week']}"
 
@@ -185,6 +208,20 @@ def get_goal_summary(goal: Goal) -> str:
     return summary
 
 
+
+
+# schedule_dialog_handler = ConversationHandler(
+#     entry_points=[CallbackQueryHandler(todo, pattern=f'^{CUSTOM_SCHEDULE_HANDLE}$')],
+#     states={
+#
+#     },
+#     map_to_parent={
+#         ConversationHandler.END: AddGoalState.SCORE_TYPE,
+#         CustomScheduleState.CANCEL: AddGoalState.CANCEL
+#     }
+# )
+
+
 add_goal_handler = ConversationHandler(
     entry_points=[CommandHandler('add', add_goal)],
     states={
@@ -194,6 +231,8 @@ add_goal_handler = ConversationHandler(
             MessageHandler(Filters.regex(f'^daily$'), add_goal_set_schedule_type_daily),
             MessageHandler(Filters.regex(f'^weekly$'), add_goal_set_schedule_type_weekly),
             MessageHandler(Filters.regex(f'^cron syntax$'), add_goal_set_schedule_type_cron)],
+        AddGoalState.SCHEDULE_DAILY_TIME:
+            [MessageHandler(Filters.regex(r'^\d+:\d+$'), add_goal_set_schedule_daily_time)],
         AddGoalState.DAY_OF_WEEK:
             [MessageHandler(Filters.regex(f'^({"|".join(days_of_week)})$'), add_goal_set_day_of_week)],
         # AddGoalStates.DAY_OF_MONTH: [MessageHandler(Filters.regex(r'^\d+$'), add_goal_set_day_of_month)],
