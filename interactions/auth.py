@@ -75,7 +75,8 @@ def authorize_user(update: Update, context: CallbackContext):
             query.edit_message_reply_markup(reply_markup=get_auth_keyboard(context, secret))
 
             def reset_buttons(ctx):
-                query.edit_message_reply_markup(reply_markup=get_auth_keyboard(context, secret))
+                if secret in context.chat_data['auth_secrets']:
+                    query.edit_message_reply_markup(reply_markup=get_auth_keyboard(context, secret))
 
             context.job_queue.run_once(reset_buttons, 10)
             return
