@@ -137,6 +137,8 @@ def handle_stats(update: Update, context: CallbackContext):
             text += get_user_stats(user)
             text += markdown_v2_escape(f"============\n\n")
 
+        if text == '':
+            text = "I found no goals for this group"
         update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
 
 
