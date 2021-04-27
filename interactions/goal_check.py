@@ -38,8 +38,8 @@ def check_goals(context: CallbackContext):
                              f'Please select whether or not you have met your goals during the last {time_string}')
     for goal in goals:
         keyboard = [
-            [InlineKeyboardButton("yes", callback_data=f'goal_check:{user_id}:{goal.title}:{time_end.timestamp()}:true'),
-             InlineKeyboardButton("no", callback_data=f'goal_check:{user_id}:{goal.title}:{time_end.timestamp()}:false')]
+            [InlineKeyboardButton("yes", callback_data=f'goal_check:{goal.title}:{time_end.timestamp()}:true'),
+             InlineKeyboardButton("no", callback_data=f'goal_check:{goal.title}:{time_end.timestamp()}:false')]
         ]
         context.bot.send_message(user.chat_id, f'Did you meet your goal {goal.title}?',
                                  reply_markup=InlineKeyboardMarkup(keyboard))
@@ -81,15 +81,16 @@ def schedule_goal_check(context: Union[CallbackContext, Dispatcher], user: User,
 
 def handle_goal_check_response(update: Update, context: CallbackContext):
     query = update.callback_query
-    _, uid, goal_title, timestamp, choice = query.data.split(':')
-    if int(uid) not in context.bot_data['users'] \
-            or goal_title not in (g.title for g in context.bot_data['users'][int(uid)].goals):
+    uid = query.from_user.id
+    _, goal_title, timestamp, choice = query.data.split(':')
+    if uid not in context.bot_data['users'] \
+            or goal_title not in (g.title for g in context.bot_data['users'][uid].goals):
         print(f"ERROR: Could not find goal for goal check response '{update.message}'!")
         context.bot.send_message(update.effective_chat.id,
                                  'Sorry, something went wrong. Please contact the bot developer')
         return
 
-    goal = next(goal for goal in context.bot_data['users'][int(uid)].goals if goal.title == goal_title)
+    goal = next(goal for goal in context.bot_data['users'][uid].goals if goal.title == goal_title)
     goal.add_data(1 if choice == 'true' else 0, datetime.fromtimestamp(float(timestamp)))
     query.answer()
     query.edit_message_text(query.message.text + (u' \u2705' if goal.data[-1]['value'] else u' \u274c'))
