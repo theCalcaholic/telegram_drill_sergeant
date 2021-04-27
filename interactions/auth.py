@@ -14,7 +14,7 @@ authorization_dialog_text = 'Use the buttons below to de-/authorize or register 
                             'users registered: {}'
 
 
-def authorized(func_or_result: Optional = None, *args):
+def authorized(func_or_result: Optional = None):
     def inner(func: Callable[[Update, CallbackContext], Any]):
         def wrapped(update: Update, context: CallbackContext):
             uid = update.effective_user.id
@@ -75,7 +75,7 @@ def authorize_user(update: Update, context: CallbackContext):
             query.answer('If you really want to close the dialog for all users, press the button again')
             query.edit_message_reply_markup(reply_markup=get_auth_keyboard(context, dialog_id))
 
-            def reset_buttons(ctx):
+            def reset_buttons(_):
                 if dialog_id in context.chat_data['dialogs']:
                     query.edit_message_reply_markup(reply_markup=get_auth_keyboard(context, dialog_id))
 
@@ -105,8 +105,6 @@ def find_user_name(user_data: TelegramUser):
         if user_data.last_name:
             name += f' {user_data.last_name}'
     return name
-
-
 
 
 @chat_types('group', 'supergroup')

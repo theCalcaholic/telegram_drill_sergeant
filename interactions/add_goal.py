@@ -172,7 +172,7 @@ def add_goal_confirm(update: Update, context: CallbackContext):
     user.add_goal(goal)
     context.chat_data['goal_data'] = None
 
-    schedule_goal_check(context, user, (g for g in user.goals if g.cron == goal.cron), goal.cron)
+    schedule_goal_check(context, user, [g for g in user.goals if g.cron == goal.cron], goal.cron)
     update.message.reply_text(f'Added goal {goal.title}', reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END

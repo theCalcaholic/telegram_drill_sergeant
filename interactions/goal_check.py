@@ -24,8 +24,6 @@ def check_goals(context: CallbackContext):
     time_end: datetime = cron.get_prev(ret_type=datetime)
     time_start: datetime = cron.get_prev(ret_type=datetime)
     time_period = (time_end - time_start)
-    print(time_period.seconds)
-    print(time_period.total_seconds())
 
     if time_period.total_seconds() / 60 < 120:
         time_string = f'{int(time_period.total_seconds() / 60)} minutes'
@@ -77,15 +75,17 @@ def schedule_all_goal_checks_for_user(context: Union[CallbackContext, Dispatcher
         schedule_goal_check(context, user, grouped_goals, grouped_goals[0].cron)
 
 
-def schedule_goal_check(context: Union[CallbackContext, Dispatcher], user: User, goals: Iterable[Goal], cron: str):
+def schedule_goal_check(context: Union[CallbackContext, Dispatcher], user: User, goals: List[Goal], cron: str):
     job_name = f'{user.id}:{cron}'
     existing_jobs = context.job_queue.get_jobs_by_name(job_name)
     if len(existing_jobs) != 0:
         for job in existing_jobs:
             job.schedule_removal()
+    if len(goals) == 0:
+        return
     trigger = CronTrigger.from_crontab(cron)
     job = context.job_queue.run_custom(check_goals, {'trigger': trigger},
-                                       context={'user_id': user.id, 'goals': list(goals)},
+                                       context={'user_id': user.id, 'goals': goals},
                                        name=job_name)
     user.jobs.append(job)
 
