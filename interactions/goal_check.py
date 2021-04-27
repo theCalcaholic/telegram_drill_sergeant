@@ -93,15 +93,21 @@ def schedule_goal_check(context: Union[CallbackContext, Dispatcher], user: User,
 def handle_goal_check_response(update: Update, context: CallbackContext):
     query = update.callback_query
     uid = query.from_user.id
-    _, dialog_id, choice = query.data.split(':')
-    if 'dialogs' not in context.chat_data or dialog_id not in context.chat_data['dialogs']:
-        query.answer('Could not find that dialog. Closing automatically...')
-        query.edit_message_reply_markup(reply_markup=None)
-        return
+    try:
+        _, dialog_id, choice = query.data.split(':')
 
-    goal_title = context.chat_data['dialogs'][dialog_id]['goal']
-    timestamp = context.chat_data['dialogs'][dialog_id]['timestamp']
-    del context.chat_data['dialogs'][dialog_id]
+        if 'dialogs' not in context.chat_data or dialog_id not in context.chat_data['dialogs']:
+            query.answer('Could not find that dialog. Closing automatically...')
+            query.edit_message_reply_markup(reply_markup=None)
+            return
+
+        goal_title = context.chat_data['dialogs'][dialog_id]['goal']
+        timestamp = context.chat_data['dialogs'][dialog_id]['timestamp']
+
+        del context.chat_data['dialogs'][dialog_id]
+    except ValueError as e:
+        print(e)
+        _, goal_title, timestamp, choice = query.data.split(':')
 
     if uid not in context.bot_data['users'] \
             or goal_title not in (g.title for g in context.bot_data['users'][uid].goals):
