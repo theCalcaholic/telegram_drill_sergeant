@@ -178,7 +178,7 @@ if __name__ == '__main__':
 
     updater.dispatcher.add_handler(CallbackQueryHandler(handle_goal_check_response, pattern=r'^goal_check:.*$'))
     updater.dispatcher.add_handler(CallbackQueryHandler(delete_goal, pattern=r'^goal_delete:.*$'))
-    updater.dispatcher.add_handler(CallbackQueryHandler(authorize_user, pattern=r'^authorization_dialog:.*$'))
+    updater.dispatcher.add_handler(CallbackQueryHandler(authorize_user, pattern=r'^auth_dialog:.*$'))
 
     updater.start_polling()
     updater.idle()

@@ -8,6 +8,8 @@ from model import Goal, User
 from typing import List, Union, Iterable
 from croniter import croniter
 from datetime import datetime, timedelta
+import random
+import string
 
 
 def check_goals(context: CallbackContext):
@@ -36,10 +38,19 @@ def check_goals(context: CallbackContext):
 
     context.bot.send_message(user.chat_id,
                              f'Please select whether or not you have met your goals during the last {time_string}')
+    chat_data = context.dispatcher.chat_data[user.chat_id]
+    if 'dialogs' not in chat_data:
+        chat_data['dialogs'] = {}
+
+    dialog_data = {
+        'timestamp': time_end.timestamp()
+    }
     for goal in goals:
+        dialog_id = ''.join(random.choice(string.ascii_letters) for _ in range(24))
+        chat_data['dialogs'][dialog_id] = {**dialog_data, **{'goal': goal.title}}
         keyboard = [
-            [InlineKeyboardButton("yes", callback_data=f'goal_check:{goal.title}:{time_end.timestamp()}:true'),
-             InlineKeyboardButton("no", callback_data=f'goal_check:{goal.title}:{time_end.timestamp()}:false')]
+            [InlineKeyboardButton("yes", callback_data=f'goal_check:{dialog_id}:true'),
+             InlineKeyboardButton("no", callback_data=f'goal_check:{dialog_id}:false')]
         ]
         context.bot.send_message(user.chat_id, f'Did you meet your goal {goal.title}?',
                                  reply_markup=InlineKeyboardMarkup(keyboard))
@@ -82,7 +93,16 @@ def schedule_goal_check(context: Union[CallbackContext, Dispatcher], user: User,
 def handle_goal_check_response(update: Update, context: CallbackContext):
     query = update.callback_query
     uid = query.from_user.id
-    _, goal_title, timestamp, choice = query.data.split(':')
+    _, dialog_id, choice = query.data.split(':')
+    if 'dialogs' not in context.chat_data or dialog_id not in context.chat_data['dialogs']:
+        query.answer('Could not find that dialog. Closing automatically...')
+        query.edit_message_reply_markup(reply_markup=None)
+        return
+
+    goal_title = context.chat_data['dialogs'][dialog_id]['goal']
+    timestamp = context.chat_data['dialogs'][dialog_id]['timestamp']
+    del context.chat_data['dialogs'][dialog_id]
+
     if uid not in context.bot_data['users'] \
             or goal_title not in (g.title for g in context.bot_data['users'][uid].goals):
         print(f"ERROR: Could not find goal for goal check response '{update.message}'!")
