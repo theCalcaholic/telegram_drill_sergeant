@@ -107,7 +107,7 @@ def handle_goal_check_response(update: Update, context: CallbackContext):
         del context.chat_data['dialogs'][dialog_id]
     except ValueError as e:
         print(e)
-        _, goal_title, timestamp, choice = query.data.split(':')
+        _, uid, goal_title, timestamp, choice = query.data.split(':')
 
     if uid not in context.bot_data['users'] \
             or goal_title not in (g.title for g in context.bot_data['users'][uid].goals):
