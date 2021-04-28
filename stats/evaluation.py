@@ -29,7 +29,7 @@ def generate_graph(goals: List[Goal]) -> str:
         #     x_max = datetime.fromtimestamp(goal.data[-1]['time'])
 
     ax.xaxis.set_major_locator(mdates.DayLocator())
-    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=6))
+    #ax.xaxis.set_minor_locator(mdates.HourLocator(interval=6))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%d. %m'))
     ax.set_xlim(left=max(datetime.now() - timedelta(days=100), x_min), right=datetime.now())
     ax.set_ylim(bottom=0)
