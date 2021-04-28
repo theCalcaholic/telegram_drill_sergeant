@@ -2,3 +2,4 @@ python-telegram-bot>=13.4
 APScheduler>=3.6
 croniter>=1.0
 cron-descriptor>=1.2
+matplotlib==3.4.1

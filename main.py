@@ -7,11 +7,10 @@ from typing import Dict, Callable, List
 from common import admin_id, initialize, chat_types, cron_pattern, goal_score_types, markdown_v2_escape
 from interactions import authorized, show_auth_dialog, authorize_user, schedule_all_goal_checks, add_goal_handler, \
     handle_goal_check_response, schedule_goal_check
+from stats import handle_stats
 from model import Goal, User
-from apscheduler.triggers.cron import CronTrigger
 import random
 import string
-import croniter
 
 bot_token = os.environ['TELEGRAM_API_TOKEN']
 
@@ -36,47 +35,6 @@ def start(update: Update, context: CallbackContext):
 
     update.effective_message.reply_html('Welcome to the Drill Sergeant. Send /add to add a goal or /help to get more '
                                         'information.', reply_markup=ReplyKeyboardRemove())
-
-
-def get_user_stats(user: User):
-    goals = user.goals
-    stats = {goal: goal.data[-1]['score'] if len(goal.data) > 0 else 0 for goal in goals}
-    stats_text = ""
-
-    score_formats = {
-        goal_score_types[0]: " streak of {score} {interval}",
-        goal_score_types[1]: "{score:.2f} % (for the last {range} {interval})",
-        goal_score_types[2]: "{score}/{range:d} {interval}"
-    }
-    for goal in goals:
-        try:
-            interval = 'intervals'
-
-            print(f'{goal.title}: {goal.cron}')
-            if re.fullmatch(r'\*(/0*1)? \* \* \* \*', goal.cron) is not None:
-                interval = 'minutes'
-            elif re.fullmatch(r'(\*|\d+)(/0*1)? \*(/0*1)? \* \* \*', goal.cron) is not None:
-                interval = 'hours'
-            elif re.fullmatch(r'(\*|\d+)(/0*1)? (\*|\d+)(/0*1)? \*(/0*1)? \* \*', goal.cron) is not None:
-                interval = 'days'
-            elif re.fullmatch(r'(\*|\d+)(/0*1)? (\*|\d+)(/0*1)? (\*|\d+)(/0*1)? \*(/0*1)? \*', goal.cron) is not None:
-                interval = 'months'
-            elif re.fullmatch(r'(\*|\d+)(/0*1)? (\*|\d+)(/0*1)? (\*|\d+)(/0*1)? \* [a-zA-Z]+', goal.cron) is not None:
-                interval = 'weeks'
-
-            score_escaped = score_formats[goal.score_type].format(score=stats[goal],
-                                                                  range=min(goal.score_range, len(goal.data)),
-                                                                  interval=interval)
-        except ValueError as e:
-            score_escaped = "<error>"
-            print(e)
-        score_escaped = markdown_v2_escape(score_escaped)
-        stats_text += f"\\- *{goal.title}*  "
-        stats_text += score_escaped
-        stats_text += "\n"
-    if stats_text == "":
-        return "No goals registered"
-    return stats_text
 
 
 @chat_types('private')
@@ -127,36 +85,6 @@ def delete_goal(update: Update, context: CallbackContext):
     schedule_goal_check(context, user, [g for g in user.goals if g.cron == schedule], schedule)
     query.answer('The goal has been deleted.')
     query.message.reply_text(f'The goal \'{goal_title}\' has been deleted')
-
-
-@authorized
-def handle_stats(update: Update, context: CallbackContext):
-    if update.effective_chat.type == 'private':
-        text = get_user_stats(context.bot_data['users'][update.effective_user.id])
-        update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
-        return
-    elif update.effective_chat.type in ['group', 'supergroup']:
-        if 'users' not in context.chat_data or len(context.chat_data['users']) == 0:
-            update.message.reply_text('No users have registered for this group')
-            return
-
-        text = ""
-        for user_id in context.chat_data['users']:
-            if user_id not in context.bot_data['users']:
-                text += f"<This user is not registered: {user_id}>\n\n"
-                continue
-
-            user = context.bot_data['users'][user_id]
-            if len(user.goals) == 0:
-                print('user has no goals')
-                continue
-            text += markdown_v2_escape(f"============\n") + f"*{markdown_v2_escape(user.name)}:*\n"
-            text += get_user_stats(user)
-            text += markdown_v2_escape(f"============\n\n")
-
-        if text == '':
-            text = "I found no goals for this group"
-        update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 @chat_types('private')
