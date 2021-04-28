@@ -1,4 +1,4 @@
-from common import cron_pattern
+from common import reaction_stickers
 from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.triggers.cron.expressions import AllExpression
 from apscheduler.triggers.cron import CronTrigger
@@ -120,3 +120,9 @@ def handle_goal_check_response(update: Update, context: CallbackContext):
     goal.add_data(1 if choice == 'true' else 0, datetime.fromtimestamp(float(timestamp)))
     query.answer()
     query.edit_message_text(query.message.text + (u' \u2705' if goal.data[-1]['value'] else u' \u274c'))
+    if choice == 'true':
+        sticker = random.choice(reaction_stickers['approval'])
+    else:
+        sticker = random.choice(reaction_stickers['disapproval'])
+    query.message.reply_sticker(sticker)
+
