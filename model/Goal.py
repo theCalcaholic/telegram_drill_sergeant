@@ -24,14 +24,14 @@ class Goal:
         data_point = {'value': value, 'time': time_end.timestamp(), 'score': -1}
         self.data.append(data_point)
         self.data[-1]['score'] = self.calculate_score()
-        start = 0
-        if self.score_range != -1:
-            start = max(len(self.data) - self.score_range, 0)
+        score_range = max(100, self.score_range)
+        start = max(len(self.data) - score_range, 0)
         self.data = sorted(self.data, key=lambda d: d['time'])[start:]
 
     def calculate_score_days(self) -> int:
         score = 0
-        for item in reversed(self.data):
+        end = len(self.data) if self.score_range == -1 else self.score_range
+        for item in reversed(self.data[:end]):
             if item['value'] == 0:
                 return score
             score += 1
@@ -42,7 +42,7 @@ class Goal:
 
     def calculate_score_floating_amount(self) -> int:
         count = min(self.score_range, len(self.data))
-        return int(sum((d['value'] for d in self.data[:count]), 0.0))
+        return int(sum((d['value'] for d in self.data[:count]), 0))
 
     def calculate_score(self) -> Union[float, int]:
         score = float('nan')
@@ -71,17 +71,11 @@ class Goal:
         self.score_range = state['score_range']
         self.data = state['data']
         self.waiting_for_data = state['waiting_for_data']
-        # if self.score_type == goal_score_types[2]:
-        #     for i in range(0, len(self.data) - 1):
-        #         if 'score' in self.data[i]:
-        #             self.data[i]['score'] = int(self.data[i]['score'])
-        #         else:
-        #             self.data[i]['score'] = 0
 
     def __str__(self):
         summary = f"Title: {self.title}\n" \
                   f"Schedule: {cron_descriptor.ExpressionDescriptor(self.cron, cron_descriptor_options)}\n" \
-                  f"Score: {self.score_type}"
+                  f"Score: {self.score_type.replace('x/10', f'x/{self.score_range}')}"
         if self.score_range != -1:
             summary += f"\nScore Range: {self.score_range}"
         return summary

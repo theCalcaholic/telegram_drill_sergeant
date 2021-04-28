@@ -8,9 +8,10 @@ from common import admin_id, initialize, chat_types, cron_pattern, goal_score_ty
 from interactions import authorized, show_auth_dialog, authorize_user, schedule_all_goal_checks, add_goal_handler, \
     handle_goal_check_response, schedule_goal_check
 from model import Goal, User
+from apscheduler.triggers.cron import CronTrigger
 import random
 import string
-
+import croniter
 
 bot_token = os.environ['TELEGRAM_API_TOKEN']
 
@@ -43,13 +44,29 @@ def get_user_stats(user: User):
     stats_text = ""
 
     score_formats = {
-        goal_score_types[0]: " streak of {}",
-        goal_score_types[1]: "{:.2f} %",
-        goal_score_types[2]: "{}/{:d}"
+        goal_score_types[0]: " streak of {score} {interval}",
+        goal_score_types[1]: "{score:.2f} % (for the last {range} {interval})",
+        goal_score_types[2]: "{score}/{range:d} {interval}"
     }
     for goal in goals:
         try:
-            score_escaped = score_formats[goal.score_type].format(stats[goal], goal.score_range)
+            interval = 'intervals'
+
+            print(f'{goal.title}: {goal.cron}')
+            if re.fullmatch(r'\*(/0*1)? \* \* \* \*', goal.cron) is not None:
+                interval = 'minutes'
+            elif re.fullmatch(r'(\*|\d+)(/0*1)? \*(/0*1)? \* \* \*', goal.cron) is not None:
+                interval = 'hours'
+            elif re.fullmatch(r'(\*|\d+)(/0*1)? (\*|\d+)(/0*1)? \*(/0*1)? \* \*', goal.cron) is not None:
+                interval = 'days'
+            elif re.fullmatch(r'(\*|\d+)(/0*1)? (\*|\d+)(/0*1)? (\*|\d+)(/0*1)? \*(/0*1)? \*', goal.cron) is not None:
+                interval = 'months'
+            elif re.fullmatch(r'(\*|\d+)(/0*1)? (\*|\d+)(/0*1)? (\*|\d+)(/0*1)? \* [a-zA-Z]+', goal.cron) is not None:
+                interval = 'weeks'
+
+            score_escaped = score_formats[goal.score_type].format(score=stats[goal],
+                                                                  range=min(goal.score_range, len(goal.data)),
+                                                                  interval=interval)
         except ValueError as e:
             score_escaped = "<error>"
             print(e)
