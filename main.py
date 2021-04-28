@@ -188,8 +188,17 @@ def show_help_message(update: Update, _):
     update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
 
 
+def print_message(update: Update, context: CallbackContext):
+    from common import reaction_stickers
+    for emotion in reaction_stickers.keys():
+        update.message.reply_text(emotion)
+        for sticker in reaction_stickers[emotion]:
+            update.message.reply_sticker(sticker)
+
+
 if __name__ == '__main__':
-    persistence = PicklePersistence(filename='driserbot_state')
+    persistence = PicklePersistence(
+        filename=os.environ['PICKLE_PATH'] if 'PICKLE_PATH' in os.environ else 'driserbot_state')
     updater = Updater(token=bot_token, use_context=True, persistence=persistence)
 
     initialize(updater.dispatcher)
@@ -208,6 +217,8 @@ if __name__ == '__main__':
     updater.dispatcher.add_handler(CallbackQueryHandler(handle_goal_check_response, pattern=r'^goal_check:.*$'))
     updater.dispatcher.add_handler(CallbackQueryHandler(delete_goal, pattern=r'^goal_delete:.*$'))
     updater.dispatcher.add_handler(CallbackQueryHandler(authorize_user, pattern=r'^auth_dialog:.*$'))
+
+    # updater.dispatcher.add_handler(MessageHandler(Filters.sticker, print_message))
 
     updater.start_polling()
     updater.idle()
