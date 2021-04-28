@@ -49,12 +49,9 @@ class Goal:
         score_range = min(score_range, len(self.data))
         if offset > score_range:
             return 0
-        slice = self.data[-score_range:] if offset == 0 else self.data[-score_range:-offset]
-        result = int(sum((d['value'] for d in slice), 0))
-        print(f'calculate_score_floating_amount(data_len = {len(self.data)}, score_range = {score_range}, offset={offset}) => {result}')
-        print(slice)
+        data_slice = self.data[-score_range:] if offset == 0 else self.data[-score_range:-offset]
+        result = int(sum((d['value'] for d in data_slice), 0))
         return result
-
 
     def calculate_score(self) -> Dict[str, Union[int, float]]:
         scores = {
@@ -80,8 +77,6 @@ class Goal:
         self.cron = state['cron']
         self.score_type = state['score_type']
         self.score_range = state['score_range']
-        if self.title == 'Test':
-            print(state['data'])
         if len(state['data']) > 0 and not isinstance(state['data'][0]['score'], dict):
             self.data = list(map(lambda d: {'value': d['value'], 'time': d['time'], 'score': {
                 goal_score_types[0]: d['score'] if goal_score_types[0] == self.score_type else 0,

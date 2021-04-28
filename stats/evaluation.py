@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import tempfile
 
 import setuptools.msvc
-from matplotlib import pyplot, ticker
+from matplotlib import pyplot, ticker, use as mpl_use
 import matplotlib.dates as mdates
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
@@ -11,6 +11,9 @@ from common import goal_score_types, markdown_v2_escape
 from model import User, Goal
 from interactions import authorized
 from typing import List
+
+
+mpl_use('Agg')
 
 
 def generate_graph(goals: List[Goal]) -> str:
