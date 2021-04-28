@@ -56,7 +56,7 @@ def delete_dialog(update: Update, context: CallbackContext):
         if len(keyboard[-1]) == 4:
             keyboard.append([])
         keyboard[-1].append(InlineKeyboardButton(goal_title, callback_data=f'goal_delete:{dialog_id}:{i}'))
-    keyboard.append([InlineKeyboardButton('Cancel', callback_data='goal_delete:CANCEL:')])
+    keyboard.append([InlineKeyboardButton('Cancel', callback_data=f'goal_delete:{dialog_id}:CANCEL')])
 
     update.message.reply_text('Select the goal to delete', reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -70,13 +70,16 @@ def delete_goal(update: Update, context: CallbackContext):
         query.answer('Could not find dialog. Closing...')
         query.edit_message_reply_markup()
 
+    if goal_id == 'CANCEL':
+        query.answer()
+        query.edit_message_reply_markup()
+        del context.chat_data['dialogs'][dialog_id]
+        return
+
     goal_title = context.chat_data['dialogs'][dialog_id]['goals'][int(goal_id)]
     user_id = query.from_user.id
 
     query.edit_message_reply_markup()
-    if user_id == 'CANCEL':
-        query.answer()
-        return
 
     user = context.bot_data['users'][int(user_id)]
     goal = user.find_goal_by_title(goal_title)

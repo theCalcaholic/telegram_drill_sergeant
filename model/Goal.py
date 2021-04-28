@@ -37,22 +37,33 @@ class Goal:
             score += 1
         return score
 
-    def calculate_score_floating_average(self) -> float:
-        return self.calculate_score_floating_amount() / self.score_range
+    def calculate_score_floating_average(self, score_range: int = -1) -> float:
+        if score_range == -1:
+            score_range = 100. if self.score_range == -1 else self.score_range
+        score_range = min(score_range, len(self.data))
+        return self.calculate_score_floating_amount(score_range=score_range) / score_range
 
-    def calculate_score_floating_amount(self) -> int:
-        count = min(self.score_range, len(self.data))
-        return int(sum((d['value'] for d in self.data[:count]), 0))
+    def calculate_score_floating_amount(self, score_range: int = -1, offset=0) -> int:
+        if score_range == -1:
+            score_range = 100 if self.score_range == -1 else self.score_range
+        score_range = min(score_range, len(self.data))
+        if offset > score_range:
+            return 0
+        slice = self.data[-score_range:] if offset == 0 else self.data[-score_range:-offset]
+        result = int(sum((d['value'] for d in slice), 0))
+        print(f'calculate_score_floating_amount(data_len = {len(self.data)}, score_range = {score_range}, offset={offset}) => {result}')
+        print(slice)
+        return result
 
-    def calculate_score(self) -> Union[float, int]:
-        score = float('nan')
-        if self.score_type == goal_score_types[0]:
-            score = self.calculate_score_days()
-        elif self.score_type == goal_score_types[1]:
-            score = self.calculate_score_floating_average()
-        elif self.score_type == goal_score_types[2]:
-            score = self.calculate_score_floating_amount()
-        return score
+
+    def calculate_score(self) -> Dict[str, Union[int, float]]:
+        scores = {
+            goal_score_types[0]: self.calculate_score_days(),
+            goal_score_types[1]: self.calculate_score_floating_average(),
+            goal_score_types[2]: self.calculate_score_floating_amount()
+        }
+
+        return scores
 
     def __getstate__(self):
         return {
@@ -69,7 +80,16 @@ class Goal:
         self.cron = state['cron']
         self.score_type = state['score_type']
         self.score_range = state['score_range']
-        self.data = state['data']
+        if self.title == 'Test':
+            print(state['data'])
+        if len(state['data']) > 0 and not isinstance(state['data'][0]['score'], dict):
+            self.data = list(map(lambda d: {'value': d['value'], 'time': d['time'], 'score': {
+                goal_score_types[0]: d['score'] if goal_score_types[0] == self.score_type else 0,
+                goal_score_types[1]: d['score'] if goal_score_types[1] == self.score_type else 0.,
+                goal_score_types[2]: d['score'] if goal_score_types[2] == self.score_type else 0
+            }}, state['data']))
+        else:
+            self.data = state['data']
         self.waiting_for_data = state['waiting_for_data']
 
     def __str__(self):
