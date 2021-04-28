@@ -71,9 +71,12 @@ class Goal:
         self.score_range = state['score_range']
         self.data = state['data']
         self.waiting_for_data = state['waiting_for_data']
-        if self.score_type == goal_score_types[2]:
-            for i in range(0, len(self.data) - 1):
-                self.data[i].score = int(self.data[i].score)
+        # if self.score_type == goal_score_types[2]:
+        #     for i in range(0, len(self.data) - 1):
+        #         if 'score' in self.data[i]:
+        #             self.data[i]['score'] = int(self.data[i]['score'])
+        #         else:
+        #             self.data[i]['score'] = 0
 
     def __str__(self):
         summary = f"Title: {self.title}\n" \
