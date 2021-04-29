@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import tempfile
 
 import setuptools.msvc
-from matplotlib import pyplot, ticker, use as mpl_use
+from matplotlib import pyplot, ticker, use as mpl_use, transforms as mpl_transforms
 import matplotlib.dates as mdates
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
@@ -20,12 +20,14 @@ def generate_graph(goals: List[Goal]) -> str:
     fig, ax = pyplot.subplots()
     x_min = datetime.now()
     # x_max = datetime(1970, 1, 1)
-    for goal in goals:
+
+    for idx, goal in enumerate(goals):
         if len(goal.data) == 0:
             continue
         ax.plot([datetime.fromtimestamp(dp['time']) for dp in goal.data],
-                [dp['score'][goal_score_types[1]] for dp in goal.data],
+                [dp['score'][goal_score_types[1]] - (0.01 * idx) + (0.005 * len(goals)) for dp in goal.data],
                 label=goal.title, alpha=0.7)
+        #, transform=ax.transData + mpl_transforms.Affine2D().translate(0.01, 0.01))
         if datetime.fromtimestamp(goal.data[0]['time']) < x_min:
             x_min = datetime.fromtimestamp(goal.data[0]['time'])
         # if datetime.fromtimestamp(goal.data[-1]['time']) > x_max:
@@ -35,7 +37,7 @@ def generate_graph(goals: List[Goal]) -> str:
     #ax.xaxis.set_minor_locator(mdates.HourLocator(interval=6))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%d. %m'))
     ax.set_xlim(left=max(datetime.now() - timedelta(days=100), x_min), right=datetime.now())
-    ax.set_ylim(bottom=0)
+    ax.set_ylim(bottom=0, top=1.1)
 
     pyplot.legend(loc='best')
     pyplot.xlabel('time')

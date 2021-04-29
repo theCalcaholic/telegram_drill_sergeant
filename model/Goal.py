@@ -85,6 +85,12 @@ class Goal:
             }}, state['data']))
         else:
             self.data = state['data']
+
+        score_range = 100. if self.score_range == -1 else self.score_range
+        score_range = min(score_range, len(self.data))
+        for i in range(len(self.data)):
+            if self.data[i]['score'][goal_score_types[2]] != 0 and self.data[i]['score'][goal_score_types[1]] == 0.:
+                self.data[i]['score'][goal_score_types[1]] = self.data[i]['score'][goal_score_types[2]] / float(score_range)
         self.waiting_for_data = state['waiting_for_data']
 
     def __str__(self):
