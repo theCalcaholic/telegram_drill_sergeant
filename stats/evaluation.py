@@ -21,20 +21,24 @@ def generate_graph(goals: List[Goal]) -> str:
     x_min = datetime.now()
     # x_max = datetime(1970, 1, 1)
 
+    line_offset = 0.01
+
     for idx, goal in enumerate(goals):
         if len(goal.data) == 0:
             continue
         ax.plot([datetime.fromtimestamp(dp['time']) for dp in goal.data],
-                [dp['score'][goal_score_types[1]] - (0.01 * idx) + (0.005 * len(goals)) for dp in goal.data],
+                [
+                    dp['score'][goal_score_types[1]] - (line_offset * idx) + (line_offset * 0.5 * len(goals))
+                    for dp in goal.data
+                ],
                 label=goal.title, alpha=0.7)
-        #, transform=ax.transData + mpl_transforms.Affine2D().translate(0.01, 0.01))
         if datetime.fromtimestamp(goal.data[0]['time']) < x_min:
             x_min = datetime.fromtimestamp(goal.data[0]['time'])
         # if datetime.fromtimestamp(goal.data[-1]['time']) > x_max:
         #     x_max = datetime.fromtimestamp(goal.data[-1]['time'])
 
     ax.xaxis.set_major_locator(mdates.DayLocator())
-    #ax.xaxis.set_minor_locator(mdates.HourLocator(interval=6))
+    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=1))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%d. %m'))
     ax.set_xlim(left=max(datetime.now() - timedelta(days=100), x_min), right=datetime.now())
     ax.set_ylim(bottom=0, top=1.1)
@@ -49,7 +53,7 @@ def generate_graph(goals: List[Goal]) -> str:
     return fig_path
 
 
-def get_user_stats(user: User):
+def get_user_stats(user: User, bullet_string='-'):
     goals = user.goals
     print(goals)
     stats = {goal: goal.data[-1]['score'][goal.score_type] if len(goal.data) > 0 else 0 for goal in goals}
@@ -84,7 +88,7 @@ def get_user_stats(user: User):
             score_escaped = "<error>"
             print(e)
         score_escaped = markdown_v2_escape(score_escaped)
-        stats_text += f"\\- *{goal.title}*  "
+        stats_text += f"{bullet_string} *{goal.title}*  "
         stats_text += score_escaped
         stats_text += "\n"
     if stats_text == "":
@@ -115,9 +119,11 @@ def handle_stats(update: Update, context: CallbackContext):
             if len(user.goals) == 0:
                 print('user has no goals')
                 continue
-            text += markdown_v2_escape(f"============\n") + f"*{markdown_v2_escape(user.name)}:*\n"
-            text += get_user_stats(user)
-            text += markdown_v2_escape(f"============\n\n")
+            text += f"\uA712*{markdown_v2_escape(user.name)}:*\n"
+            user_stats = get_user_stats(user, bullet_string='\uA714')
+            user_stats = '\uA716'.join(user_stats.rsplit('\uA714', 1))
+            text += user_stats
+            text += markdown_v2_escape(f"\n")
             all_goals.extend(user.goals)
 
         if text == '':
