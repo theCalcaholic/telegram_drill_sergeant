@@ -16,7 +16,7 @@ from typing import List
 mpl_use('Agg')
 
 
-def generate_graph(goals: List[Goal]) -> str:
+def generate_graph(goals: List[Goal], legend_full_goal_title=True) -> str:
     fig, ax = pyplot.subplots()
     x_min = datetime.now()
     # x_max = datetime(1970, 1, 1)
@@ -31,7 +31,7 @@ def generate_graph(goals: List[Goal]) -> str:
                     dp['score'][goal_score_types[1]] - (line_offset * idx) + (line_offset * 0.5 * len(goals))
                     for dp in goal.data
                 ],
-                label=goal.title, alpha=0.7)
+                label=goal.title if legend_full_goal_title else str(idx), alpha=0.7)
         if datetime.fromtimestamp(goal.data[0]['time']) < x_min:
             x_min = datetime.fromtimestamp(goal.data[0]['time'])
         # if datetime.fromtimestamp(goal.data[-1]['time']) > x_max:
@@ -53,7 +53,7 @@ def generate_graph(goals: List[Goal]) -> str:
     return fig_path
 
 
-def get_user_stats(user: User, bullet_string='-'):
+def get_user_stats(user: User, bullet_string='-', numbered_offset=-1):
     goals = user.goals
     print(goals)
     stats = {goal: goal.data[-1]['score'][goal.score_type] if len(goal.data) > 0 else 0 for goal in goals}
@@ -64,7 +64,7 @@ def get_user_stats(user: User, bullet_string='-'):
         goal_score_types[1]: "{score:.2f} % (for the last {range} {interval})",
         goal_score_types[2]: "{score}/{range:d} {interval}"
     }
-    for goal in goals:
+    for idx, goal in enumerate(goals):
         try:
             interval = 'intervals'
 
@@ -88,7 +88,8 @@ def get_user_stats(user: User, bullet_string='-'):
             score_escaped = "<error>"
             print(e)
         score_escaped = markdown_v2_escape(score_escaped)
-        stats_text += f"{markdown_v2_escape(bullet_string)} *{goal.title}*  "
+        stats_text += f"{markdown_v2_escape(bullet_string)}" \
+                      f"{'' if numbered_offset == -1 else str(idx + numbered_offset)} *{goal.title}*  "
         stats_text += score_escaped
         stats_text += "\n"
     if stats_text == "":
@@ -110,6 +111,7 @@ def handle_stats(update: Update, context: CallbackContext):
 
         text = ""
         all_goals = []
+        goal_id_offset = 0
         for user_id in context.chat_data['users']:
             if user_id not in context.bot_data['users']:
                 text += f"<This user is not registered: {user_id}>\n\n"
@@ -123,7 +125,7 @@ def handle_stats(update: Update, context: CallbackContext):
             wide_hyphen = '\uff0d'
             text += markdown_v2_escape(f"\uA714{''.join(wide_hyphen for _ in range(int(len(user.name) / 2)))}"
                                        f"{wide_hyphen * 2}\n")
-            user_stats = get_user_stats(user, bullet_string='\uA714')
+            user_stats = get_user_stats(user, bullet_string='\uA714', numbered_offset=len(all_goals))
             user_stats = '\uA716'.join(user_stats.rsplit('\uA714', 1))
             text += user_stats
             text += markdown_v2_escape(f"\n")
@@ -131,5 +133,5 @@ def handle_stats(update: Update, context: CallbackContext):
 
         if text == '':
             text = "I found no goals for this group"
-        fig_path = generate_graph(all_goals)
+        fig_path = generate_graph(all_goals, legend_full_goal_title=False)
         update.message.reply_photo(open(fig_path, 'rb'), caption=text, parse_mode=ParseMode.MARKDOWN_V2)
