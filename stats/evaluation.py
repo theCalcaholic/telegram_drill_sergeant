@@ -111,7 +111,6 @@ def handle_stats(update: Update, context: CallbackContext):
 
         text = ""
         all_goals = []
-        goal_id_offset = 0
         for user_id in context.chat_data['users']:
             if user_id not in context.bot_data['users']:
                 text += f"<This user is not registered: {user_id}>\n\n"
@@ -121,7 +120,7 @@ def handle_stats(update: Update, context: CallbackContext):
             if len(user.goals) == 0:
                 print('user has no goals')
                 continue
-            text += f"\uA712*{markdown_v2_escape(user.name)}:*\n"
+            text += f"\uA712 *[{markdown_v2_escape(user.name)}](tg://user?id={user.id})*:\n"
             wide_hyphen = '\uff0d'
             text += markdown_v2_escape(f"\uA714{''.join(wide_hyphen for _ in range(int(len(user.name) / 2)))}"
                                        f"{wide_hyphen * 2}\n")
