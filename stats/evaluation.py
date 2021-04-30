@@ -88,7 +88,7 @@ def get_user_stats(user: User, bullet_string='-'):
             score_escaped = "<error>"
             print(e)
         score_escaped = markdown_v2_escape(score_escaped)
-        stats_text += f"{bullet_string} *{goal.title}*  "
+        stats_text += f"{markdown_v2_escape(bullet_string)} *{goal.title}*  "
         stats_text += score_escaped
         stats_text += "\n"
     if stats_text == "":
