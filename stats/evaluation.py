@@ -120,6 +120,9 @@ def handle_stats(update: Update, context: CallbackContext):
                 print('user has no goals')
                 continue
             text += f"\uA712*{markdown_v2_escape(user.name)}:*\n"
+            wide_hyphen = '\uff0d'
+            text += markdown_v2_escape(f"\uA714{''.join(wide_hyphen for _ in range(int(len(user.name) / 2)))}"
+                                       f"{wide_hyphen * 2}\n")
             user_stats = get_user_stats(user, bullet_string='\uA714')
             user_stats = '\uA716'.join(user_stats.rsplit('\uA714', 1))
             text += user_stats
