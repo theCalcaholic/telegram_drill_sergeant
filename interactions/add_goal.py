@@ -190,7 +190,7 @@ def create_goal_from_user_input(goal_data: Dict) -> Goal:
     if goal_data['schedule_type'] == 'cron syntax':
         # match = cron_pattern.fullmatch(goal_data['cron'])
         # cron_schedule = f"{match.group('minute')} {match.group('hour')} {match.group('dom')} {match.group('month')} " \
-                        f"{match.group('dow')}"
+        #                 f"{match.group('dow')}"
         cron_schedule = goal_data['cron']
     elif goal_data['schedule_type'] == 'daily':
         if 'schedule_time' in goal_data:
