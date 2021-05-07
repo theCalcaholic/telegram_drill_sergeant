@@ -133,4 +133,5 @@ def handle_stats(update: Update, context: CallbackContext):
         if text == '':
             text = "I found no goals for this group"
         fig_path = generate_graph(all_goals, legend_full_goal_title=False)
+        print(text)
         update.message.reply_photo(open(fig_path, 'rb'), caption=text, parse_mode=ParseMode.MARKDOWN_V2)
