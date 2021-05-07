@@ -89,7 +89,7 @@ def get_user_stats(user: User, bullet_string='-', numbered_offset=-1):
             print(e)
         score_escaped = markdown_v2_escape(score_escaped)
         stats_text += f"{markdown_v2_escape(bullet_string)}" \
-                      f"{'' if numbered_offset == -1 else str(idx + numbered_offset)} *{goal.title}*  "
+                      f"{'' if numbered_offset == -1 else str(idx + numbered_offset)} *{markdown_v2_escape(goal.title)}*  "
         stats_text += score_escaped
         stats_text += "\n"
     if stats_text == "":
@@ -120,7 +120,8 @@ def handle_stats(update: Update, context: CallbackContext):
             if len(user.goals) == 0:
                 print('user has no goals')
                 continue
-            text += f"\uA712 *[{markdown_v2_escape(user.name)}](tg://user?id={user.id})*:\n"
+            user_name = '<unknown>' if user.name == '' else user.name
+            text += f"\uA712 *[{markdown_v2_escape(user_name)}](tg://user?id={user.id})*:\n"
             wide_hyphen = '\uff0d'
             text += markdown_v2_escape(f"\uA714{''.join(wide_hyphen for _ in range(int(len(user.name) / 2)))}"
                                        f"{wide_hyphen * 2}\n")
@@ -133,5 +134,4 @@ def handle_stats(update: Update, context: CallbackContext):
         if text == '':
             text = "I found no goals for this group"
         fig_path = generate_graph(all_goals, legend_full_goal_title=False)
-        print(text)
         update.message.reply_photo(open(fig_path, 'rb'), caption=text, parse_mode=ParseMode.MARKDOWN_V2)
