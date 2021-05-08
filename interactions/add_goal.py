@@ -28,7 +28,7 @@ class AddGoalState(Enum):
 CUSTOM_SCHEDULE_HANDLE = 'CREATE_CUSTOM_SCHEDULE'
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal(update: Update, context: CallbackContext) -> AddGoalState:
 
@@ -38,7 +38,7 @@ def add_goal(update: Update, context: CallbackContext) -> AddGoalState:
     return AddGoalState.TITLE
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal_set_title(update: Update, context: CallbackContext):
     title = update.message.text.strip()
@@ -53,7 +53,7 @@ def add_goal_set_title(update: Update, context: CallbackContext):
     return AddGoalState.SCHEDULE_TYPE
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal_set_schedule_type_daily(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['schedule_type'] = 'daily'
@@ -62,7 +62,7 @@ def add_goal_set_schedule_type_daily(update: Update, context: CallbackContext):
     return AddGoalState.SCHEDULE_DAILY_TIME
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal_set_schedule_daily_time(update: Update, context: CallbackContext):
     if update.message is None:
@@ -82,7 +82,7 @@ def add_goal_set_schedule_daily_time(update: Update, context: CallbackContext):
     return AddGoalState.SCORE_TYPE
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal_set_schedule_type_weekly(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['schedule_type'] = 'weekly'
@@ -93,7 +93,7 @@ def add_goal_set_schedule_type_weekly(update: Update, context: CallbackContext):
     return AddGoalState.DAY_OF_WEEK
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal_set_schedule_type_cron(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['schedule_type'] = 'cron syntax'
@@ -103,7 +103,7 @@ def add_goal_set_schedule_type_cron(update: Update, context: CallbackContext):
     return AddGoalState.CRON_SCHEDULE
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal_set_day_of_week(update: Update, context: CallbackContext):
     context.chat_data['goal_data']['day_of_week'] = update.message.text
@@ -113,7 +113,7 @@ def add_goal_set_day_of_week(update: Update, context: CallbackContext):
     return AddGoalState.SCORE_TYPE
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal_set_cron_schedule(update: Update, context: CallbackContext):
     try:
@@ -129,7 +129,7 @@ def add_goal_set_cron_schedule(update: Update, context: CallbackContext):
     return AddGoalState.SCORE_TYPE
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal_set_score_type(update: Update, context: CallbackContext):
     score_type = update.message.text
@@ -147,7 +147,7 @@ def add_goal_set_score_type(update: Update, context: CallbackContext):
         return AddGoalState.SCORE_FLOATING_RANGE
 
 
-@authorized(AddGoalState.CANCEL)
+@authorized(ConversationHandler.END)
 @chat_types('private')
 def add_goal_set_score_range(update: Update, context: CallbackContext):
     if not update.message.text.isdigit() or int(update.message.text) > 60:

@@ -3,42 +3,94 @@ from datetime import datetime, timedelta
 import tempfile
 
 import setuptools.msvc
-from matplotlib import pyplot, ticker, use as mpl_use, transforms as mpl_transforms
+from matplotlib import pyplot, ticker, use as mpl_use, transforms as mpl_transforms, colors as mpl_colors
 import matplotlib.dates as mdates
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
 from common import goal_score_types, markdown_v2_escape
 from model import User, Goal
 from interactions import authorized
-from typing import List
+from typing import List, Dict, Union
 
 
 mpl_use('Agg')
 
 
+def find_average(all_goals_data: List[Dict[str, List[Union[datetime, float]]]], x_curr: datetime) -> float:
+    summed = 0
+    count = 0
+    for goal in all_goals_data:
+        xs = goal['x']
+        ys = goal['y']
+        if xs[0] > x_curr or xs[-1] < x_curr or len(xs) == 0:
+            continue
+
+        if xs[0] == x_curr:
+            count += 1
+            summed += ys[0]
+            continue
+        elif xs[-1] == x_curr:
+            count += 1
+            summed += ys[-1]
+            continue
+
+        print(f'x_curr: {str(x_curr)}')
+        print([(i-1, i) for i, (x0, x1) in enumerate(zip(xs[:-1], xs[1:]))])
+        print(xs)
+        bounds = next((i-1, i) for i, (x0, x1) in enumerate(zip(xs[:-1], xs[1:])) if x0 <= x_curr <= x1)
+        y_0 = ys[bounds[0]]
+        y_1 = ys[bounds[1]]
+        x_0 = xs[bounds[0]]
+        x_1 = xs[bounds[1]]
+        interpolation = ((y_1 - y_0) / (x_1 - x_0).seconds) * (x_curr - x_0).seconds + y_0
+        summed += interpolation
+        count += 1
+
+    if count == 0:
+        return 0
+
+    return summed / count
+
+
 def generate_graph(goals: List[Goal], legend_full_goal_title=True) -> str:
     fig, ax = pyplot.subplots()
     x_min = datetime.now()
-    # x_max = datetime(1970, 1, 1)
+    x_max = datetime(1970, 1, 1)
 
     line_offset = 0.01
+    all_goals_data = []
 
     for idx, goal in enumerate(goals):
         if len(goal.data) == 0:
             continue
-        ax.plot([datetime.fromtimestamp(dp['time']) for dp in goal.data],
-                [
-                    dp['score'][goal_score_types[1]] - (line_offset * idx) + (line_offset * 0.5 * len(goals))
-                    for dp in goal.data
-                ],
+        data = {'x': [], 'y': []}
+        for dp in goal.data:
+            data['x'].append(datetime.fromtimestamp(dp['time']))
+            data['y'].append(dp['score'][goal_score_types[1]])
+        all_goals_data.append(data)
+        ax.plot(data['x'], [val - (line_offset * idx) + (line_offset * 0.5 * len(goals)) for val in data['y']],
                 label=goal.title if legend_full_goal_title else str(idx), alpha=0.7)
         if datetime.fromtimestamp(goal.data[0]['time']) < x_min:
             x_min = datetime.fromtimestamp(goal.data[0]['time'])
-        # if datetime.fromtimestamp(goal.data[-1]['time']) > x_max:
-        #     x_max = datetime.fromtimestamp(goal.data[-1]['time'])
+        if datetime.fromtimestamp(goal.data[-1]['time']) > x_max:
+            x_max = datetime.fromtimestamp(goal.data[-1]['time'])
+
+    x_curr = x_min
+    averages = {'x': [], 'y': []}
+
+    while x_curr < x_max:
+        averages['x'].append(x_curr)
+        averages['y'].append(find_average(all_goals_data, x_curr))
+        x_curr = x_curr + timedelta(minutes=1)
+    averages['x'].append(x_max)
+    averages['y'].append(find_average(all_goals_data, x_max))
+    print('averages:')
+    print(averages)
+    ax.fill_between(averages['x'], averages['y'], color=[(0.8, 0.1, 0.1, 0.3)])
+
 
     ax.xaxis.set_major_locator(mdates.DayLocator())
-    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=1))
+    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=4))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%d. %m'))
     ax.set_xlim(left=max(datetime.now() - timedelta(days=100), x_min), right=datetime.now())
     ax.set_ylim(bottom=0, top=1.1)
