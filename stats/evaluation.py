@@ -34,15 +34,15 @@ def find_average(all_goals_data: List[Dict[str, List[Union[datetime, float]]]], 
             summed += ys[-1]
             continue
 
-        print(f'x_curr: {str(x_curr)}')
-        print([(i-1, i) for i, (x0, x1) in enumerate(zip(xs[:-1], xs[1:]))])
-        print(xs)
-        bounds = next((i-1, i) for i, (x0, x1) in enumerate(zip(xs[:-1], xs[1:])) if x0 <= x_curr <= x1)
+        # print(f'x_curr: {str(x_curr)}')
+        # print([(i-1, i) for i, (x0, x1) in enumerate(zip(xs[:-1], xs[1:]))])
+        # print(xs)
+        bounds = next((i, i+1) for i, (x0, x1) in enumerate(zip(xs[:-1], xs[1:])) if x0 <= x_curr <= x1)
         y_0 = ys[bounds[0]]
         y_1 = ys[bounds[1]]
         x_0 = xs[bounds[0]]
         x_1 = xs[bounds[1]]
-        interpolation = ((y_1 - y_0) / (x_1 - x_0).seconds) * (x_curr - x_0).seconds + y_0
+        interpolation = ((y_1 - y_0) / (x_1 - x_0).total_seconds()) * (x_curr - x_0).total_seconds() + y_0
         summed += interpolation
         count += 1
 
