@@ -84,9 +84,8 @@ def generate_graph(goals: List[Goal], legend_full_goal_title=True) -> str:
     averages['y'].append(find_average(all_goals_data, x_max))
     ax.fill_between(averages['x'], averages['y'], color=[(0.8, 0.1, 0.1, 0.1)], edgecolor=[(0.8, 0.1, 0.1, 0.3)])
 
-
     ax.xaxis.set_major_locator(mdates.DayLocator())
-    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=4))
+    ax.xaxis.set_minor_locator(mdates.HourLocator(byhour=range(4, 24, 4)))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%d. %m'))
     ax.set_xlim(left=max(datetime.now() - timedelta(days=100), x_min), right=datetime.now())
     ax.set_ylim(bottom=0, top=1.1)
