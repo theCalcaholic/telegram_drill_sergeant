@@ -82,7 +82,7 @@ def generate_graph(goals: List[Goal], legend_full_goal_title=True) -> str:
         x_curr = x_curr + avg_interval
     averages['x'].append(x_max)
     averages['y'].append(find_average(all_goals_data, x_max))
-    ax.fill_between(averages['x'], averages['y'], color=[(0.8, 0.1, 0.1, 0.3)])
+    ax.fill_between(averages['x'], averages['y'], color=[(0.8, 0.1, 0.1, 0.1)], edgecolor=[(0.8, 0.1, 0.1, 0.3)])
 
 
     ax.xaxis.set_major_locator(mdates.DayLocator())
