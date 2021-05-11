@@ -160,7 +160,7 @@ def handle_stats(update: Update, context: CallbackContext):
         all_goals = []
         for user_id in context.chat_data['users']:
             if user_id not in context.bot_data['users']:
-                text += f"<This user is not registered: {user_id}>\n\n"
+                text += markdown_v2_escape(f"<This user is not registered: {user_id}>\n\n")
                 continue
 
             user = context.bot_data['users'][user_id]
