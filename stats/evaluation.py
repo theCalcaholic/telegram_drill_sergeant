@@ -116,7 +116,8 @@ def generate_graph(goals: List[Goal], legend_full_goal_title=True) -> str:
     ax.set_xlim(left=max(datetime.now() - timedelta(days=100), x_min), right=x_max)
     ax.set_ylim(bottom=0, top=1.1)
 
-    pyplot.legend(loc='best')
+    fig.subplots_adjust(bottom=0.3, wspace=0.33)
+    pyplot.legend(bbox_to_anchor=(0.5, -0.2), fancybox=False, shadow=False, ncol=min(4, len(goals)), loc='upper center')
     pyplot.xlabel('time')
     pyplot.ylabel('score')
     fig.autofmt_xdate()
@@ -174,7 +175,7 @@ def get_user_stats(user: User, bullet_string='-', numbered_offset=-1):
 def handle_stats(update: Update, context: CallbackContext):
     if update.effective_chat.type == 'private':
         text = get_user_stats(context.bot_data['users'][update.effective_user.id])
-        fig_path = generate_graph(context.bot_data['users'][update.effective_user.id].goals)
+        fig_path = generate_graph(context.bot_data['users'][update.effective_user.id].goals, False)
         update.message.reply_photo(open(fig_path, 'rb'), caption=text, parse_mode=ParseMode.MARKDOWN_V2)
         return
     elif update.effective_chat.type in ['group', 'supergroup']:
